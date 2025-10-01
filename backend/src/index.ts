@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
+import pool from './config/db'; // Importar el pool de la base de datos
 
 dotenv.config();
 
@@ -35,6 +36,19 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 app.get('/', (req:Request, res:Response) => {
   res.send(`¡Hola desde el backend de ${process.env.APP_NAME}!`);
+});
+
+// Ruta para probar la conexión a la base de datos
+app.get('/db-test', async (req: Request, res: Response) => {
+  try {
+    const client = await pool.connect();
+    await client.query('SELECT NOW()');
+    client.release();
+    res.status(200).send('Conexión a la base de datos exitosa!');
+  } catch (error) {
+    console.error('Error al conectar a la base de datos:', error);
+    res.status(500).send('Error al conectar a la base de datos.');
+  }
 });
 
 app.listen(port, () => {

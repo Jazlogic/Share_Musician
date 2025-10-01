@@ -1,7 +1,5 @@
 # Backend de Share Musician
 
-# Backend de Share Musician
-
 Este documento detalla la configuración, las tecnologías y la estructura del backend para la aplicación **Share Musician**. El objetivo principal de este backend es proporcionar una API robusta y escalable para gestionar usuarios, publicaciones, interacciones y otros datos relacionados con la plataforma de intercambio musical.
 
 
