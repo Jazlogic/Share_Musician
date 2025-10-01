@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
+import authRoutes from './routes/auth';
 import pool from './config/db'; // Importar el pool de la base de datos
 
 dotenv.config();
@@ -33,6 +34,8 @@ const swaggerOptions = {
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+app.use('/auth', authRoutes);
 
 app.get('/', (req:Request, res:Response) => {
   res.send(`¡Hola desde el backend de ${process.env.APP_NAME}!`);

@@ -69,6 +69,26 @@ DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@aws-0-us-west-1.pooler.supab
 
 **Importante:** Reemplaza `[YOUR-PASSWORD]` con la contraseña real de tu base de datos de Supabase.
 
+### Esquema de la Base de Datos e Inicialización
+
+El esquema de la base de datos se define en el archivo `database/init.sql`. Este script crea las tablas `churches`, `users` y `user_passwords`, junto con sus respectivas columnas, tipos de datos, restricciones y políticas de seguridad a nivel de fila (RLS).
+
+Para inicializar la base de datos con este esquema, ejecuta el siguiente comando desde el directorio `backend`:
+
+```bash
+npm run run-sql
+```
+
+### Interfaces de TypeScript para la Base de Datos
+
+Para garantizar la seguridad de tipos y facilitar el desarrollo, se han definido interfaces de TypeScript que representan la estructura de las tablas de la base de datos. Estas interfaces se encuentran en `src/types/db.d.ts` y son:
+
+- `DB.Church`: Representa la tabla `churches`.
+- `DB.User`: Representa la tabla `users`.
+- `DB.UserPassword`: Representa la tabla `user_passwords`.
+
+Estas interfaces deben utilizarse al interactuar con la base de datos para asegurar que los datos se manejen de forma consistente y tipada.
+
 ### Ejecución del Servidor de Desarrollo
 
 Para iniciar el servidor backend en modo de desarrollo, lo que permite la recarga automática de los cambios gracias a `nodemon`, ejecuta el siguiente comando desde el directorio `backend`:
