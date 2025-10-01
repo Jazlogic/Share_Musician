@@ -48,12 +48,66 @@ El archivo `.env` debe contener las siguientes variables:
 ```dotenv
 PORT=3001
 APP_NAME="Share Musician API"
+DATABASE_URL="postgresql://[DB_USER]:[DB_PASSWORD]@[DB_HOST]:[DB_PORT]/[DB_NAME]"
 ```
 
 - `PORT`: Define el puerto en el que el servidor Express escuchará las solicitudes entrantes. Por defecto, se utiliza el puerto `3001`.
 - `APP_NAME`: Establece el nombre de la aplicación, que se utiliza para el título de la documentación de Swagger. Por defecto, es "Share Musician API".
+- `DATABASE_URL`: La cadena de conexión completa para la base de datos PostgreSQL de Supabase. Asegúrate de reemplazar `[DB_USER]`, `[DB_PASSWORD]`, `[DB_HOST]`, `[DB_PORT]` y `[DB_NAME]` con tus credenciales reales de Supabase.
 
-**Importante:** El archivo `.env` no debe ser versionado en sistemas de control de versiones como Git, ya que puede contener información sensible. Asegúrate de que `.env` esté incluido en el archivo `.gitignore`.
+**Configuración de la Base de Datos (Supabase)**
+
+El backend se conecta a una base de datos PostgreSQL, preferentemente alojada en Supabase. La configuración de la conexión se realiza a través de la variable de entorno `DATABASE_URL`.
+
+Para conectar el backend a tu instancia de Supabase, necesitas obtener la cadena de conexión de tu proyecto Supabase. Esta cadena se encuentra generalmente en la sección "Database" -> "Connection String" de tu panel de control de Supabase.
+
+Una vez obtenida, añade la variable `DATABASE_URL` a tu archivo `.env` con el valor de la cadena de conexión. Por ejemplo:
+
+```dotenv
+DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@aws-0-us-west-1.pooler.supabase.com:5432/postgres"
+```
+
+**Importante:** Reemplaza `[YOUR-PASSWORD]` con la contraseña real de tu base de datos de Supabase.
+
+### Ejecución del Servidor de Desarrollo
+
+Para iniciar el servidor backend en modo de desarrollo, lo que permite la recarga automática de los cambios gracias a `nodemon`, ejecuta el siguiente comando desde el directorio `backend`:
+
+```bash
+npm run dev
+```
+
+Una vez iniciado, el servidor estará escuchando en la dirección `http://localhost:3001` (o el puerto que hayas configurado en tu archivo `.env`). Este modo es ideal para el desarrollo activo, ya que cualquier modificación en el código fuente (`.ts`) provocará un reinicio automático del servidor, aplicando los cambios al instante.
+
+## Documentación de la API (Swagger)
+
+La API de Share Musician está completamente documentada utilizando Swagger/OpenAPI, lo que proporciona una interfaz interactiva para explorar y probar los endpoints disponibles.
+
+### Acceso a la Documentación
+
+Una vez que el servidor de desarrollo esté en ejecución, puedes acceder a la interfaz de usuario de Swagger a través de tu navegador web en la siguiente URL:
+
+`http://localhost:3001/api-docs`
+
+En esta interfaz, podrás:
+
+- **Visualizar todos los endpoints**: Ver una lista completa de las rutas de la API, los métodos HTTP que aceptan (GET, POST, PUT, DELETE, etc.) y sus descripciones.
+- **Entender los parámetros**: Conocer los parámetros de entrada requeridos o opcionales para cada endpoint, incluyendo su tipo de dato y formato.
+- **Probar los endpoints**: Realizar solicitudes directamente desde la interfaz de Swagger y ver las respuestas del servidor en tiempo real.
+- **Conocer los modelos de respuesta**: Entender la estructura de los datos que la API devuelve para cada solicitud exitosa o en caso de error.
+
+La documentación se genera automáticamente a partir de los comentarios JSDoc en el código fuente, asegurando que esté siempre actualizada con la implementación de la API.
+
+## Resumen de Commits Recientes
+
+A continuación, se presenta un resumen de los commits más relevantes que reflejan el progreso y las características implementadas en el backend:
+
+- **feat: Configure Supabase database connection and add test endpoint**: Este commit configura la conexión a la base de datos de Supabase utilizando la variable de entorno `DATABASE_URL` y añade un endpoint de prueba (`/db-test`) para verificar la conectividad.
+- **feat: Configuración inicial del backend con Express y TypeScript**: Este commit establece la base del proyecto backend, incluyendo la configuración de un servidor Express, la integración de TypeScript para un desarrollo más robusto, Nodemon para la recarga automática en desarrollo y CORS para manejar las políticas de seguridad de origen cruzado. También se incluye la configuración inicial del archivo `.env`.
+- **feat: Configuración de Swagger y gestión de APP_NAME**: En este commit, se integró Swagger/OpenAPI para proporcionar una documentación interactiva de la API. Se configuró `swagger-ui-express` y `swagger-jsdoc` para generar la documentación a partir del código. Además, se implementó la gestión del nombre de la aplicación (`APP_NAME`) a través de una variable de entorno en `.env`, que se utiliza para personalizar el título de la documentación de Swagger.
+- **docs: Añadir README.md para la documentación del backend**: Este commit introduce el archivo `README.md` en el directorio `backend`, proporcionando una documentación inicial sobre la configuración del proyecto, las tecnologías utilizadas y cómo ejecutar el servidor.
+- **docs: Actualizar README.md con estructura de proyecto y versiones de dependencias**: Este commit mejora la documentación del `README.md` añadiendo una descripción detallada de la estructura del proyecto y especificando las versiones exactas de las dependencias utilizadas, lo que facilita la comprensión y replicación del entorno de desarrollo.
+
 
 ### Ejecución del Servidor de Desarrollo
 
