@@ -1,0 +1,19 @@
+# Archivos generados por el sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos de configuración de IDE
+.vscode/
+.idea/
+
+# Archivos de credenciales (ejemplo)
+docs/instalacion/credenciales.md
+
+# Archivos de logs
+*.log
+
+# Archivos de caché
+.cache/
+
+# Archivos de entorno
+.env*
