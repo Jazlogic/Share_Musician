@@ -1,62 +1,143 @@
-import express ,{Request,Response}from 'express';
+import express from 'express';
 import dotenv from 'dotenv';
-import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import authRoutes from './routes/auth';
-import pool from './config/db'; // Importar el pool de la base de datos
+import churchRoutes from './routes/church';
+import userRoutes from './routes/user'; // Import the new user routes
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(cors());
-const port = process.env.PORT || 3001;
 
-// Opciones de Swagger
-const swaggerOptions = {
-  swaggerDefinition: {
+const options = {
+  definition: {
     openapi: '3.0.0',
     info: {
-      title: process.env.APP_NAME || 'API de Share Musician',
+      title: 'Share Musician API',
       version: '1.0.0',
-      description: 'Documentación de la API para la aplicación Share Musician',
+      description: 'API documentation for the Share Musician application',
     },
     servers: [
       {
-        url: `http://localhost:${port}`,
-        description: 'Servidor de desarrollo',
+        url: `http://localhost:${process.env.PORT || 3001}`,
       },
     ],
+    components: {
+      schemas: {
+        User: {
+          type: 'object',
+          required: ['email', 'password', 'name', 'phone'],
+          properties: {
+            user_id: {
+              type: 'string',
+              format: 'uuid',
+              readOnly: true,
+            },
+            email: {
+              type: 'string',
+              format: 'email',
+              description: 'User\'s email address',
+            },
+            password: {
+              type: 'string',
+              format: 'password',
+              description: 'User\'s password',
+            },
+            name: {
+              type: 'string',
+              description: 'User\'s full name',
+            },
+            phone: {
+              type: 'string',
+              description: 'User\'s phone number',
+            },
+            role: {
+              type: 'string',
+              enum: ['leader', 'musician', 'admin'],
+              default: 'musician',
+              description: 'User\'s role',
+            },
+            active_role: {
+              type: 'string',
+              enum: ['leader', 'musician'],
+              default: 'musician',
+              description: 'User\'s active role',
+            },
+            status: {
+              type: 'string',
+              enum: ['active', 'pending', 'rejected'],
+              default: 'active',
+              description: 'User\'s account status',
+            },
+            church_id: {
+              type: 'string',
+              format: 'uuid',
+              nullable: true,
+              description: 'ID of the church the user belongs to',
+            },
+            created_at: {
+              type: 'string',
+              format: 'date-time',
+              readOnly: true,
+            },
+            updated_at: {
+              type: 'string',
+              format: 'date-time',
+              readOnly: true,
+            },
+          },
+        },
+        Church: { // Add Church schema
+          type: 'object',
+          required: ['name'],
+          properties: {
+            churches_id: {
+              type: 'string',
+              format: 'uuid',
+              readOnly: true,
+            },
+            name: {
+              type: 'string',
+              description: 'The name of the church',
+            },
+            location: {
+              type: 'string',
+              description: 'The location of the church',
+            },
+            created_at: {
+              type: 'string',
+              format: 'date-time',
+              readOnly: true,
+            },
+            updated_at: {
+              type: 'string',
+              format: 'date-time',
+              readOnly: true,
+            },
+          },
+        },
+      },
+    },
   },
-  apis: ['./src/**/*.ts'], // Rutas a los archivos de la API
+  apis: ['./src/routes/*.ts'], // Path to the API docs
 };
 
-const swaggerDocs = swaggerJsdoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+const swaggerSpec = swaggerJsdoc(options);
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/auth', authRoutes);
+app.use('/churches', churchRoutes);
+app.use('/users', userRoutes); // Use the new user routes
 
-app.get('/', (req:Request, res:Response) => {
-  res.send(`¡Hola desde el backend de ${process.env.APP_NAME}!`);
+app.get('/', (req, res) => {
+  res.send('Share Musician API is running');
 });
 
-// Ruta para probar la conexión a la base de datos
-app.get('/db-test', async (req: Request, res: Response) => {
-  try {
-    const client = await pool.connect();
-    await client.query('SELECT NOW()');
-    client.release();
-    res.status(200).send('Conexión a la base de datos exitosa!');
-  } catch (error) {
-    console.error('Error al conectar a la base de datos:', error);
-    res.status(500).send('Error al conectar a la base de datos.');
-  }
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Swagger docs available at http://localhost:${PORT}/api-docs`);
 });
-
-app.listen(port, () => {
-  console.log(`Servidor escuchando en http://localhost:${port}`);
-});
-
-// Mantener el proceso activo en entornos donde se cierra prematuramente
-process.stdin.resume();
