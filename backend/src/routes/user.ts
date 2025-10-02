@@ -48,6 +48,8 @@ router.post('/', createUserController);
  *   get:
  *     summary: Returns the list of all users
  *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
  *     responses:
  *       200:
  *         description: The list of the users
@@ -66,6 +68,8 @@ router.get('/', authenticateToken, getUsersController);
  *   get:
  *     summary: Get a user by id
  *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -91,6 +95,8 @@ router.get('/:id', authenticateToken, getUserByIdController);
  *   put:
  *     summary: Update a user by id
  *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -124,6 +130,8 @@ router.put('/:id', authenticateToken, updateUserController);
  *   delete:
  *     summary: Remove a user by id
  *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id

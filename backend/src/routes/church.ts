@@ -23,6 +23,8 @@ const router = Router();
  *   post:
  *     summary: Create a new church
  *     tags: [Churches]
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -56,6 +58,8 @@ router.post('/', authenticateToken, createChurchController);
  *   get:
  *     summary: Returns the list of all churches
  *     tags: [Churches]
+ *     security:
+ *       - BearerAuth: []
  *     responses:
  *       200:
  *         description: The list of the churches
@@ -74,6 +78,8 @@ router.get('/', authenticateToken, getChurchesController);
  *   get:
  *     summary: Get a church by id
  *     tags: [Churches]
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -99,6 +105,8 @@ router.get('/:id', authenticateToken, getChurchByIdController);
  *   put:
  *     summary: Update a church by id
  *     tags: [Churches]
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -139,6 +147,8 @@ router.put('/:id', authenticateToken, updateChurchController);
  *   delete:
  *     summary: Remove a church by id
  *     tags: [Churches]
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
