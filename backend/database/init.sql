@@ -17,10 +17,9 @@ CREATE TABLE IF NOT EXISTS churches (
     name VARCHAR(255) UNIQUE NOT NULL,
     location VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    email_verified BOOLEAN DEFAULT FALSE,
-    verification_token VARCHAR(255) UNIQUE
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+select * from churches;
 
 -- Tabla para Usuarios (normalizada)
 CREATE TABLE IF NOT EXISTS users (
