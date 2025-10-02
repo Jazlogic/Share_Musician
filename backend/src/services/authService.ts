@@ -30,7 +30,7 @@ export const registerUser = async (email: string, name: string, phone: string): 
   }
 };
 
-export const setPassword = async (email: string, password: string): Promise<void> => {
+export const setPassword = async (email: string, password: string): Promise<{ user: User; token: string }> => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -76,7 +76,16 @@ export const setPassword = async (email: string, password: string): Promise<void
       ['active', user.user_id]
     );
 
+    const updatedUserResult = await client.query(
+      'SELECT user_id, email, name, phone, role, active_role, status, church_id, created_at, updated_at, email_verified FROM users WHERE user_id = $1',
+      [user.user_id]
+    );
+    const updatedUser: User = updatedUserResult.rows[0];
+
+    const token = jwt.sign({ userId: updatedUser.user_id, role: updatedUser.role }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
+
     await client.query('COMMIT');
+    return { user: updatedUser, token };
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;

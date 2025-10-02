@@ -183,7 +183,21 @@ export const register = async (req: Request, res: Response) => {
  *               - password
  *     responses:
  *       200 OK:
- *         description: Contraseña establecida exitosamente y usuario activado.
+ *         description: Contraseña establecida exitosamente y usuario activado. Retorna el usuario y un token de autenticación.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Contraseña establecida exitosamente y usuario activado.
+ *                 user:
+ *                   type: object
+ *                   description: Objeto del usuario.
+ *                 token:
+ *                   type: string
+ *                   description: Token de autenticación JWT.
  *       400 Bad Request:
  *         description: Datos de entrada inválidos o usuario no encontrado.
  *       500 Internal Server Error:
@@ -193,8 +207,8 @@ export const setUserPassword = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
-    await setPassword(email, password);
-    res.status(200).json({ message: 'Contraseña establecida exitosamente y usuario activado.' });
+    const { user, token } = await setPassword(email, password);
+    res.status(200).json({ message: 'Contraseña establecida exitosamente y usuario activado.', user, token });
   } catch (error: any) {
     if (error.message === 'Correo electrónico no verificado. Por favor, verifica tu correo antes de establecer la contraseña.') {
       return res.status(400).json({ message: error.message });
