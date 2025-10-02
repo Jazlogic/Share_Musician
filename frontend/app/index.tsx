@@ -4,6 +4,7 @@ import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { SvgXml } from 'react-native-svg';
 import musicalNoteSvg from '../assets/images/musical-note.svg';
+import { api, MessageResponse } from '../services/api';
 
 export default function WelcomeScreen() {
   const [email, setEmail] = useState('');
@@ -12,26 +13,15 @@ export default function WelcomeScreen() {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch('http://localhost:3000/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert('Login Successful', data.message);
-        // Optionally, store token and navigate to another screen
-        // For example: router.replace('/(tabs)');
+      console.log('Sending login request with:', { email, password });
+      const response = await api.post<MessageResponse>('/auth/login', { email, password });
+      if (response.status === 200) {
+        router.replace('/home');
       } else {
-        Alert.alert('Login Failed', data.message || 'Something went wrong');
+        Alert.alert('Error', response.data.message || 'Login failed');
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      Alert.alert('Error', 'Could not connect to the server.');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'An error occurred');
     }
   };
 
@@ -43,10 +33,10 @@ export default function WelcomeScreen() {
       end={{ x: 1, y: 1 }}
     >
       <View style={styles.content}>
-        <Text style={styles.welcomeText}>Welcome Back</Text>
+        <Text style={styles.welcomeText}>¡Bienvenido de nuevo!</Text>
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder="Correo electrónico"
           placeholderTextColor="#A9A9A9"
           keyboardType="email-address"
           value={email}
@@ -54,24 +44,19 @@ export default function WelcomeScreen() {
         />
         <TextInput
           style={styles.input}
-          placeholder="Password"
+          placeholder="Contraseña"
           placeholderTextColor="#A9A9A9"
           secureTextEntry
           value={password}
           onChangeText={setPassword}
         />
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.loginButtonText}>LOG IN</Text>
+          <Text style={styles.loginButtonText}>INICIAR SESIÓN</Text>
         </TouchableOpacity>
         <View style={styles.linksContainer}>
           <Link href="/register" asChild>
             <TouchableOpacity>
-              <Text style={styles.linkText}>Forgot Password?</Text>
-            </TouchableOpacity>
-          </Link>
-          <Link href="/register" asChild>
-            <TouchableOpacity>
-              <Text style={styles.linkText}>Create Account</Text>
+              <Text style={styles.linkText}>Crear cuenta</Text>
             </TouchableOpacity>
           </Link>
         </View>
@@ -114,13 +99,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    shadowOpacity: 0.34,
-    shadowRadius: 6.27,
+    boxShadow: '0px 2px 6.27px rgba(0, 0, 0, 0.34)',
     elevation: 10,
   },
   loginButtonText: {
@@ -130,7 +109,7 @@ const styles = StyleSheet.create({
   },
   linksContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     width: '100%',
     marginTop: 20,
     paddingHorizontal: 20,

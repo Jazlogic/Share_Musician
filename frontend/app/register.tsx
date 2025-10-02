@@ -2,6 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import { api, MessageResponse } from '../services/api';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
@@ -11,27 +12,18 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     try {
-      const response = await fetch('http://localhost:3000/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email, phone }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert('Registration Successful', data.message);
-        router.replace('/verify-email'); // Navigate to verify email screen after successful registration
+      const response = await api.post<MessageResponse>('/auth/register', { name, email, phone });
+      if (response.status === 201) {
+        Alert.alert('Registro exitoso', response.data.message);
+        router.replace('/verify-email');
       } else {
-        Alert.alert('Registration Failed', data.message || 'Something went wrong');
+        Alert.alert('Error de registro', response.data.message || 'Algo salió mal');
       }
-    } catch (error) {
-      console.error('Registration error:', error);
-      Alert.alert('Error', 'Could not connect to the server.');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'No se pudo conectar al servidor.');
     }
   };
+
 
   return (
     <LinearGradient
@@ -41,17 +33,17 @@ export default function RegisterScreen() {
       end={{ x: 1, y: 1 }}
     >
       <View style={styles.content}>
-        <Text style={styles.welcomeText}>Create Account</Text>
+        <Text style={styles.welcomeText}>Crear cuenta</Text>
         <TextInput
           style={styles.input}
-          placeholder="Name"
+          placeholder="Nombre"
           placeholderTextColor="#A9A9A9"
           value={name}
           onChangeText={setName}
         />
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder="Correo electrónico"
           placeholderTextColor="#A9A9A9"
           keyboardType="email-address"
           value={email}
@@ -59,19 +51,19 @@ export default function RegisterScreen() {
         />
         <TextInput
           style={styles.input}
-          placeholder="Phone"
+          placeholder="Teléfono"
           placeholderTextColor="#A9A9A9"
           keyboardType="phone-pad"
           value={phone}
           onChangeText={setPhone}
         />
         <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
-          <Text style={styles.registerButtonText}>REGISTER</Text>
+          <Text style={styles.registerButtonText}>REGISTRARSE</Text>
         </TouchableOpacity>
         <View style={styles.linksContainer}>
           <Link href="/" asChild>
             <TouchableOpacity>
-              <Text style={styles.linkText}>Already have an account? Log In</Text>
+              <Text style={styles.linkText}>¿Ya tienes una cuenta? Iniciar sesión</Text>
             </TouchableOpacity>
           </Link>
         </View>
@@ -114,13 +106,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    shadowOpacity: 0.34,
-    shadowRadius: 6.27,
+    boxShadow: '0px 2px 6.27px rgba(0, 0, 0, 0.34)',
     elevation: 10,
   },
   registerButtonText: {

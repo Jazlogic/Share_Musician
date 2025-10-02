@@ -1,34 +1,25 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { api, MessageResponse } from '../services/api';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 
 export default function VerifyEmailScreen() {
   const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
   const router = useRouter();
 
   const handleVerifyEmail = async () => {
     try {
-      const response = await fetch('http://localhost:3000/auth/verify-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, code }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert('Verification Successful', data.message);
-        router.replace('/set-password'); // Navigate to set password screen
+      const response = await api.post<MessageResponse>('/auth/verify-email', { email, verificationCode });
+      if (response.status === 200) {
+        Alert.alert('Verificación exitosa', response.data.message);
+        router.replace('/set-password');
       } else {
-        Alert.alert('Verification Failed', data.message || 'Something went wrong');
+        Alert.alert('Error de verificación', response.data.message || 'Algo salió mal');
       }
-    } catch (error) {
-      console.error('Email verification error:', error);
-      Alert.alert('Error', 'Could not connect to the server.');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'No se pudo conectar al servidor.');
     }
   };
 
@@ -40,10 +31,10 @@ export default function VerifyEmailScreen() {
       end={{ x: 1, y: 1 }}
     >
       <View style={styles.content}>
-        <Text style={styles.welcomeText}>Verify Your Email</Text>
+        <Text style={styles.welcomeText}>Verifica tu correo electrónico</Text>
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder="Correo electrónico"
           placeholderTextColor="#A9A9A9"
           keyboardType="email-address"
           value={email}
@@ -51,18 +42,18 @@ export default function VerifyEmailScreen() {
         />
         <TextInput
           style={styles.input}
-          placeholder="Verification Code"
+          placeholder="Código de verificación"
           placeholderTextColor="#A9A9A9"
-          value={code}
-          onChangeText={setCode}
+          value={verificationCode}
+          onChangeText={setVerificationCode}
         />
         <TouchableOpacity style={styles.verifyButton} onPress={handleVerifyEmail}>
-          <Text style={styles.verifyButtonText}>VERIFY</Text>
+          <Text style={styles.verifyButtonText}>VERIFICAR</Text>
         </TouchableOpacity>
         <View style={styles.linksContainer}>
           <Link href="/" asChild>
             <TouchableOpacity>
-              <Text style={styles.linkText}>Back to Login</Text>
+              <Text style={styles.linkText}>Volver a Iniciar sesión</Text>
             </TouchableOpacity>
           </Link>
         </View>
@@ -105,13 +96,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    shadowOpacity: 0.34,
-    shadowRadius: 6.27,
+    boxShadow: '0px 2px 6.27px rgba(0, 0, 0, 0.34)',
     elevation: 10,
   },
   verifyButtonText: {

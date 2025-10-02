@@ -2,6 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import { api, MessageResponse } from '../services/api';
 
 export default function SetPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -17,25 +18,15 @@ export default function SetPasswordScreen() {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/auth/set-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, code, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert('Password Set Successfully', data.message);
-        router.replace('/'); // Navigate to login after successful password set
+      const response = await api.post<MessageResponse>('/auth/set-password', { email, code, password });
+      if (response.status === 200) {
+        Alert.alert('Contraseña establecida', response.data.message);
+        router.replace('/');
       } else {
-        Alert.alert('Failed to Set Password', data.message || 'Something went wrong');
+        Alert.alert('Error', response.data.message || 'Algo salió mal');
       }
-    } catch (error) {
-      console.error('Set password error:', error);
-      Alert.alert('Error', 'Could not connect to the server.');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'No se pudo conectar al servidor.');
     }
   };
 
@@ -47,10 +38,10 @@ export default function SetPasswordScreen() {
       end={{ x: 1, y: 1 }}
     >
       <View style={styles.content}>
-        <Text style={styles.welcomeText}>Set Your Password</Text>
+        <Text style={styles.welcomeText}>Establece tu contraseña</Text>
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder="Correo electrónico"
           placeholderTextColor="#A9A9A9"
           keyboardType="email-address"
           value={email}
@@ -58,14 +49,14 @@ export default function SetPasswordScreen() {
         />
         <TextInput
           style={styles.input}
-          placeholder="Verification Code"
+          placeholder="Código de verificación"
           placeholderTextColor="#A9A9A9"
           value={code}
           onChangeText={setCode}
         />
         <TextInput
           style={styles.input}
-          placeholder="New Password"
+          placeholder="Nueva contraseña"
           placeholderTextColor="#A9A9A9"
           secureTextEntry
           value={password}
@@ -73,19 +64,19 @@ export default function SetPasswordScreen() {
         />
         <TextInput
           style={styles.input}
-          placeholder="Confirm New Password"
+          placeholder="Confirmar nueva contraseña"
           placeholderTextColor="#A9A9A9"
           secureTextEntry
           value={confirmPassword}
           onChangeText={setConfirmPassword}
         />
         <TouchableOpacity style={styles.setPasswordButton} onPress={handleSetPassword}>
-          <Text style={styles.setPasswordButtonText}>SET PASSWORD</Text>
+          <Text style={styles.setPasswordButtonText}>ESTABLECER CONTRASEÑA</Text>
         </TouchableOpacity>
         <View style={styles.linksContainer}>
           <Link href="/" asChild>
             <TouchableOpacity>
-              <Text style={styles.linkText}>Back to Login</Text>
+              <Text style={styles.linkText}>Volver a Iniciar sesión</Text>
             </TouchableOpacity>
           </Link>
         </View>
@@ -111,7 +102,6 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   input: {
-    width: '100%',
     height: 50,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 25,
@@ -128,13 +118,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    shadowOpacity: 0.34,
-    shadowRadius: 6.27,
+    boxShadow: '0px 5px 6.27px rgba(0, 0, 0, 0.34)',
     elevation: 10,
   },
   setPasswordButtonText: {
