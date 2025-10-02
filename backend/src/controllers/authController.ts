@@ -195,8 +195,8 @@ export const verifyUserEmail = async (req: Request, res: Response) => {
   const { email, code } = req.body;
 
   try {
-    await verifyEmail(email, code);
-    res.status(200).json({ message: 'Correo electrónico verificado exitosamente.' });
+    const userId = await verifyEmail(email, code);
+    res.status(200).json({ message: 'Correo electrónico verificado exitosamente.', userId });
   } catch (error: any) {
     if (error.message === 'Usuario no encontrado') {
       return res.status(404).json({ message: error.message });

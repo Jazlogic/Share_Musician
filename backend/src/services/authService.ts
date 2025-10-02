@@ -69,7 +69,7 @@ export const setPassword = async (userId: string, password: string): Promise<voi
   }
 };
 
-export const verifyEmail = async (email: string, code: string): Promise<void> => {
+export const verifyEmail = async (email: string, code: string): Promise<string> => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -94,6 +94,7 @@ export const verifyEmail = async (email: string, code: string): Promise<void> =>
     );
 
     await client.query('COMMIT');
+    return user.user_id;
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
