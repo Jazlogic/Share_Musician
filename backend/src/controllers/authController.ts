@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import  pool  from '../config/db';
-import { registerUser } from '../services/authService';
+import { registerUser, loginUser } from '../services/authService';
 
 export const testDbConnection = async (req: Request, res: Response) => {
   try {
@@ -76,14 +76,15 @@ export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
-    // Aquí irá la lógica para verificar las credenciales del usuario
-    // Por ahora, solo enviaremos un mensaje de éxito si se reciben email y password
-    if (email && password) {
-      res.status(200).json({ message: 'Login exitoso (lógica pendiente)' });
-    } else {
-      res.status(400).json({ message: 'Email y contraseña son requeridos' });
+    const { user, token } = await loginUser(email, password);
+    res.status(200).json({ message: 'Login exitoso', user, token });
+  } catch (error: any) {
+    if (error.message === 'Credenciales inválidas') {
+      return res.status(401).json({ message: 'Credenciales inválidas' });
     }
-  } catch (error) {
+    if (error.message === 'Correo electrónico no verificado') {
+      return res.status(403).json({ message: 'Correo electrónico no verificado. Por favor, verifica tu correo antes de iniciar sesión.' });
+    }
     console.error('Error en el login:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }

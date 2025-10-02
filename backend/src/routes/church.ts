@@ -6,6 +6,7 @@ import {
   updateChurchController,
   deleteChurchController,
 } from '../controllers/churchController'; 
+import { authenticateToken } from '../middleware/authMiddleware';
 
 const router = Router();
 
@@ -47,7 +48,7 @@ const router = Router();
  *       500:
  *         description: Some server error
  */
-router.post('/', createChurchController);
+router.post('/', authenticateToken, createChurchController);
 
 /**
  * @swagger
@@ -65,7 +66,7 @@ router.post('/', createChurchController);
  *               items:
  *                 $ref: '#/components/schemas/Church'
  */
-router.get('/', getChurchesController);
+router.get('/', authenticateToken, getChurchesController);
 
 /**
  * @swagger
@@ -90,7 +91,7 @@ router.get('/', getChurchesController);
  *       404:
  *         description: The church was not found
  */
-router.get('/:id', getChurchByIdController);
+router.get('/:id', authenticateToken, getChurchByIdController);
 
 /**
  * @swagger
@@ -130,7 +131,7 @@ router.get('/:id', getChurchByIdController);
  *       500:
  *         description: Some error happened
  */
-router.put('/:id', updateChurchController);
+router.put('/:id', authenticateToken, updateChurchController);
 
 /**
  * @swagger
@@ -151,6 +152,6 @@ router.put('/:id', updateChurchController);
  *       404:
  *         description: The church was not found
  */
-router.delete('/:id', deleteChurchController);
+router.delete('/:id', authenticateToken, deleteChurchController);
 
 export default router;

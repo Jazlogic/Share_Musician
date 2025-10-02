@@ -7,6 +7,7 @@ import {
   deleteUserController,
   verifyEmailController,
 } from '../controllers/userController';
+import { authenticateToken } from '../middleware/authMiddleware';
 
 const router = Router();
 
@@ -57,7 +58,7 @@ router.post('/', createUserController);
  *               items:
  *                 $ref: '#/components/schemas/User'
  */
-router.get('/', getUsersController);
+router.get('/', authenticateToken, getUsersController);
 
 /**
  * @swagger
@@ -82,7 +83,7 @@ router.get('/', getUsersController);
  *       404:
  *         description: The user was not found
  */
-router.get('/:id', getUserByIdController);
+router.get('/:id', authenticateToken, getUserByIdController);
 
 /**
  * @swagger
@@ -115,7 +116,7 @@ router.get('/:id', getUserByIdController);
  *       500:
  *         description: Some error happened
  */
-router.put('/:id', updateUserController);
+router.put('/:id', authenticateToken, updateUserController);
 
 /**
  * @swagger
@@ -136,7 +137,7 @@ router.put('/:id', updateUserController);
  *       404:
  *         description: The user was not found
  */
-router.delete('/:id', deleteUserController);
+router.delete('/:id', authenticateToken, deleteUserController);
 
 /**
  * @swagger

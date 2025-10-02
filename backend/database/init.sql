@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS users (
     email_verified BOOLEAN DEFAULT FALSE,
     verification_token VARCHAR(255) UNIQUE
 );
+select * from users;
 insert into  users (name, email, phone, role) values ('Jefry Agustin astacio Sanchez','astaciosanchezjefryagustin@gmail.com','829-441-9998','admin');
 select * from users;
 
@@ -83,9 +84,6 @@ BEGIN
     END IF;
 END
 $$;
-
-
-select * from users;
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255) UNIQUE;
