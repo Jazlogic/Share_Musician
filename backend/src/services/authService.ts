@@ -35,6 +35,20 @@ export const setPassword = async (userId: string, password: string): Promise<voi
   try {
     await client.query('BEGIN');
 
+    const userResult = await client.query(
+      'SELECT email_verified FROM users WHERE user_id = $1',
+      [userId]
+    );
+    const user = userResult.rows[0];
+
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    if (!user.email_verified) {
+      throw new Error('Correo electrónico no verificado. Por favor, verifica tu correo antes de establecer la contraseña.');
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await client.query(
