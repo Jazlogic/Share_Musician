@@ -4,12 +4,11 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { generateVerificationCode, sendVerificationEmail } from '../utils/email';
 
-export const registerUser = async (email: string, name: string, phone: string, password: string): Promise<User> => {
+export const registerUser = async (email: string, name: string, phone: string): Promise<User> => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    const hashedPassword = await bcrypt.hash(password, 10);
     const verificationCode = generateVerificationCode();
 
     const userResult = await client.query(
@@ -18,15 +17,37 @@ export const registerUser = async (email: string, name: string, phone: string, p
     );
     const newUser: User = userResult.rows[0];
 
-    await client.query(
-      'INSERT INTO user_passwords (user_id, password) VALUES ($1, $2)',
-      [newUser.user_id, hashedPassword]
-    );
-
     await sendVerificationEmail(newUser.email, verificationCode);
 
     await client.query('COMMIT');
     return newUser;
+await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+export const setPassword = async (userId: string, password: string): Promise<void> => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await client.query(
+      'INSERT INTO user_passwords (user_id, password) VALUES ($1, $2)',
+      [userId, hashedPassword]
+    );
+
+    await client.query(
+      'UPDATE users SET status = $1 WHERE user_id = $2',
+      ['active', userId]
+    );
+
+    await client.query('COMMIT');
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;

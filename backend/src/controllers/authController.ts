@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import  pool  from '../config/db';
-import { registerUser, loginUser, verifyEmail } from '../services/authService';
+import { registerUser, loginUser, verifyEmail, setPassword } from '../services/authService';
 
 export const testDbConnection = async (req: Request, res: Response) => {
   try {
@@ -16,7 +16,7 @@ export const testDbConnection = async (req: Request, res: Response) => {
  * @swagger
  * /auth/register:
  *   post:
- *     summary: Registra un nuevo usuario con correo electrónico, nombre, teléfono y contraseña.
+ *     summary: Registra un nuevo usuario con correo electrónico, nombre y teléfono. La contraseña se establecerá después de la verificación del correo.
  *     tags:
  *       - Auth
  *     requestBody:
@@ -36,18 +36,13 @@ export const testDbConnection = async (req: Request, res: Response) => {
  *               phone:
  *                 type: string
  *                 description: Número de teléfono del usuario.
- *               password:
- *                 type: string
- *                 format: password
- *                 description: Contraseña del usuario (mínimo 6 caracteres).
  *             required:
  *               - email
  *               - name
  *               - phone
- *               - password
  *     responses:
  *       201 Created:
- *         description: Usuario registrado exitosamente.
+ *         description: Usuario registrado exitosamente. Se ha enviado un código de verificación al correo.
  *       400 Bad Request:
  *         description: Datos de entrada inválidos.
  *       409 Conflict:
@@ -56,11 +51,11 @@ export const testDbConnection = async (req: Request, res: Response) => {
  *         description: Error del servidor.
  */
 export const register = async (req: Request, res: Response) => {
-  const { email, name, phone, password } = req.body;
+  const { email, name, phone } = req.body;
 
   try {
-    const newUser = await registerUser(email, name, phone, password);
-    res.status(201).json({ message: 'Usuario registrado exitosamente.', userId: newUser.user_id });
+    const newUser = await registerUser(email, name, phone);
+    res.status(201).json({ message: 'Usuario registrado exitosamente. Por favor, verifica tu correo electrónico.', userId: newUser.user_id });
   } catch (error: any) {
     if (error.message === 'Email already registered') {
       return res.status(409).json({ message: 'El correo electrónico ya está registrado' });
@@ -70,7 +65,49 @@ export const register = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /auth/set-password:
+ *   post:
+ *     summary: Establece la contraseña para un usuario con el correo electrónico verificado.
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: ID del usuario.
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 description: Nueva contraseña del usuario (mínimo 6 caracteres).
+ *             required:
+ *               - userId
+ *               - password
+ *     responses:
+ *       200 OK:
+ *         description: Contraseña establecida exitosamente y usuario activado.
+ *       400 Bad Request:
+ *         description: Datos de entrada inválidos o usuario no encontrado.
+ *       500 Internal Server Error:
+ *         description: Error del servidor.
+ */
+export const setUserPassword = async (req: Request, res: Response) => {
+  const { userId, password } = req.body;
 
+  try {
+    await setPassword(userId, password);
+    res.status(200).json({ message: 'Contraseña establecida exitosamente y usuario activado.' });
+  } catch (error: any) {
+    console.error('Error setting user password:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
 
 /**
  * @swagger
