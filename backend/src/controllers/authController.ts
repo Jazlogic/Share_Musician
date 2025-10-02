@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import  pool  from '../config/db';
-import { registerUser, loginUser, verifyEmail, setPassword, resendVerificationEmail, requestPasswordReset } from '../services/authService';
+import { registerUser, loginUser, verifyEmail, setPassword, resendVerificationEmail, requestPasswordReset, resetPassword } from '../services/authService';
 
 export const testDbConnection = async (req: Request, res: Response) => {
   try {
@@ -315,6 +315,55 @@ export const login = async (req: Request, res: Response) => {
       return res.status(403).json({ message: 'Correo electrónico no verificado. Por favor, verifica tu correo antes de iniciar sesión.' });
     }
     console.error('Error en el login:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+/**
+ * @swagger
+ * /auth/reset-password:
+ *   post:
+ *     summary: Restablece la contraseña de un usuario utilizando un token válido.
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Token de restablecimiento de contraseña recibido por correo electrónico.
+ *               newPassword:
+ *                 type: string
+ *                 format: password
+ *                 description: Nueva contraseña del usuario (mínimo 6 caracteres).
+ *             required:
+ *               - token
+ *               - newPassword
+ *     responses:
+ *       200 OK:
+ *         description: Contraseña restablecida exitosamente.
+ *       400 Bad Request:
+ *         description: Token inválido o expirado, o datos de entrada inválidos.
+ *       404 Not Found:
+ *         description: Usuario no encontrado.
+ *       500 Internal Server Error:
+ *         description: Error del servidor.
+ */
+export const resetPasswordController = async (req: Request, res: Response) => {
+  const { token, newPassword } = req.body;
+
+  try {
+    await resetPassword(token, newPassword);
+    res.status(200).json({ message: 'Contraseña restablecida exitosamente.' });
+  } catch (error: any) {
+    if (error.message === 'Token inválido o expirado' || error.message === 'Usuario no encontrado') {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error('Error resetting password:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
