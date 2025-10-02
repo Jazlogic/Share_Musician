@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import  pool  from '../config/db';
-import { registerUser, loginUser, verifyEmail, setPassword } from '../services/authService';
+import { registerUser, loginUser, verifyEmail, setPassword, resendVerificationEmail } from '../services/authService';
 
 export const testDbConnection = async (req: Request, res: Response) => {
   try {
@@ -9,6 +9,54 @@ export const testDbConnection = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Error al conectar a la base de datos:', error.message);
     res.status(500).json({ message: 'Error al conectar a la base de datos.', error: error.message });
+  }
+};
+
+/**
+ * @swagger
+ * /auth/resend-verification-email:
+ *   post:
+ *     summary: Reenvía el código de verificación de correo electrónico a un usuario existente.
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Correo electrónico del usuario al que se le reenviará el código.
+ *             required:
+ *               - email
+ *     responses:
+ *       200 OK:
+ *         description: Código de verificación reenviado exitosamente.
+ *       400 Bad Request:
+ *         description: Datos de entrada inválidos o el correo electrónico ya ha sido verificado.
+ *       404 Not Found:
+ *         description: Usuario no encontrado.
+ *       500 Internal Server Error:
+ *         description: Error del servidor.
+ */
+export const resendVerificationEmailController = async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  try {
+    await resendVerificationEmail(email);
+    res.status(200).json({ message: 'Código de verificación reenviado exitosamente.' });
+  } catch (error: any) {
+    if (error.message === 'Usuario no encontrado') {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message === 'El correo electrónico ya ha sido verificado.') {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error('Error resending verification email:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
 
@@ -161,6 +209,55 @@ export const verifyUserEmail = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Inicia sesión de un usuario.
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Correo electrónico del usuario.
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 description: Contraseña del usuario.
+ *             required:
+ *               - email
+ *               - password
+ *     responses:
+ *       200 OK:
+ *         description: Login exitoso. Retorna el usuario y un token de autenticación.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Login exitoso
+ *                 user:
+ *                   type: object
+ *                   description: Objeto del usuario.
+ *                 token:
+ *                   type: string
+ *                   description: Token de autenticación JWT.
+ *       401 Unauthorized:
+ *         description: Credenciales inválidas.
+ *       403 Forbidden:
+ *         description: Correo electrónico no verificado.
+ *       500 Internal Server Error:
+ *         description: Error del servidor.
+ */
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 

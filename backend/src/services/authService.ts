@@ -21,7 +21,6 @@ export const registerUser = async (email: string, name: string, phone: string): 
 
     await client.query('COMMIT');
     return newUser;
-await client.query('COMMIT');
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -139,6 +138,43 @@ export const loginUser = async (email: string, password: string): Promise<{ user
     const token = jwt.sign({ userId: user.user_id, role: user.role }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
 
     return { user, token };
+  } finally {
+    client.release();
+  }
+};
+
+export const resendVerificationEmail = async (email: string): Promise<void> => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const userResult = await client.query(
+      'SELECT user_id, email, email_verified FROM users WHERE email = $1',
+      [email]
+    );
+    const user = userResult.rows[0];
+
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    if (user.email_verified) {
+      throw new Error('El correo electrónico ya ha sido verificado.');
+    }
+
+    const newVerificationCode = generateVerificationCode();
+
+    await client.query(
+      'UPDATE users SET verification_token = $1 WHERE user_id = $2',
+      [newVerificationCode, user.user_id]
+    );
+
+    await sendVerificationEmail(user.email, newVerificationCode);
+
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
   } finally {
     client.release();
   }
