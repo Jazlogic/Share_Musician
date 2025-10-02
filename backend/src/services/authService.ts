@@ -217,3 +217,45 @@ export const requestPasswordReset = async (email: string): Promise<void> => {
     client.release();
   }
 };
+
+export const resetPassword = async (token: string, newPassword: string): Promise<void> => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const userResult = await client.query(
+      'SELECT user_id, reset_password_expires FROM users WHERE reset_password_token = $1',
+      [token]
+    );
+    const user = userResult.rows[0];
+
+    if (!user) {
+      throw new Error('Token de restablecimiento de contraseña inválido.');
+    }
+
+    if (new Date() > new Date(user.reset_password_expires)) {
+      throw new Error('El token de restablecimiento de contraseña ha expirado.');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Actualizar la contraseña en la tabla user_passwords
+    await client.query(
+      'UPDATE user_passwords SET password = $1 WHERE user_id = $2',
+      [hashedPassword, user.user_id]
+    );
+
+    // Limpiar el token de restablecimiento de contraseña
+    await client.query(
+      'UPDATE users SET reset_password_token = NULL, reset_password_expires = NULL WHERE user_id = $1',
+      [user.user_id]
+    );
+
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
