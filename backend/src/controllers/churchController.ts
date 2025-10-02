@@ -27,7 +27,7 @@ export const getChurchByIdController = async (req: Request, res: Response) => {
     if (church) {
       res.status(200).json(church);
     } else {
-      res.status(404).json({ message: 'Church not found' });
+      res.status(404).json({ message: 'Iglesia no encontrada' });
     }
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -42,7 +42,7 @@ export const updateChurchController = async (req: Request, res: Response) => {
     if (updatedChurch) {
       res.status(200).json(updatedChurch);
     } else {
-      res.status(404).json({ message: 'Church not found' });
+      res.status(404).json({ message: 'Iglesia no encontrada' });
     }
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -56,7 +56,7 @@ export const deleteChurchController = async (req: Request, res: Response) => {
     if (deleted) {
       res.status(204).send();
     } else {
-      res.status(404).json({ message: 'Church not found' });
+      res.status(404).json({ message: 'Iglesia no encontrada' });
     }
   } catch (error: any) {
     res.status(500).json({ message: error.message });

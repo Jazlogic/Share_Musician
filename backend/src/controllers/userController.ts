@@ -29,7 +29,7 @@ export const getUserByIdController = async (req: Request, res: Response) => {
     if (user) {
       res.status(200).json(user);
     } else {
-      res.status(404).json({ message: 'User not found' });
+      res.status(404).json({ message: 'Usuario no encontrado' });
     }
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -58,7 +58,7 @@ export const deleteUserController = async (req: Request, res: Response) => {
     if (deleted) {
       res.status(204).send();
     } else {
-      res.status(404).json({ message: 'User not found' });
+      res.status(404).json({ message: 'Usuario no encontrado' });
     }
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -69,7 +69,7 @@ export const verifyEmailController = async (req: Request, res: Response) => {
   try {
     const { token } = req.body;
     if (!token) {
-      return res.status(400).json({ message: 'Verification token is required' });
+      return res.status(400).json({ message: 'Se requiere el token de verificación' });
     }
 
     const result = await userService.verifyEmail(token);

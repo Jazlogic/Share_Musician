@@ -135,12 +135,12 @@ export const verifyEmail = async (token: string): Promise<{ success: boolean; me
 
     if (!user) {
       await client.query('ROLLBACK');
-      return { success: false, message: 'Invalid or expired verification token' };
+      return { success: false, message: 'Token de verificación inválido o expirado' };
     }
 
     if (user.email_verified) {
       await client.query('ROLLBACK');
-      return { success: false, message: 'Email already verified' };
+      return { success: false, message: 'Correo electrónico ya verificado' };
     }
 
     await client.query(
@@ -149,7 +149,7 @@ export const verifyEmail = async (token: string): Promise<{ success: boolean; me
     );
 
     await client.query('COMMIT');
-    return { success: true, message: 'Email verified successfully' };
+    return { success: true, message: 'Correo electrónico verificado exitosamente' };
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;

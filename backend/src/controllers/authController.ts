@@ -60,13 +60,13 @@ export const register = async (req: Request, res: Response) => {
 
   try {
     const newUser = await registerUser(email, name, phone, password);
-    res.status(201).json({ message: 'User registered successfully.', userId: newUser.user_id });
+    res.status(201).json({ message: 'Usuario registrado exitosamente.', userId: newUser.user_id });
   } catch (error: any) {
     if (error.message === 'Email already registered') {
-      return res.status(409).json({ message: error.message });
+      return res.status(409).json({ message: 'El correo electrónico ya está registrado' });
     }
     console.error('Error during user registration:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
 
