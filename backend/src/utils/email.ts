@@ -10,13 +10,16 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export const sendVerificationEmail = async (to: string, token: string) => {
-  const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+export const generateVerificationCode = (): string => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+export const sendVerificationEmail = async (to: string, code: string) => {
   const mailOptions = {
     from: process.env.EMAIL_USER, // sender address
     to: to, // list of receivers
-    subject: 'Verificación de cuenta Share Musician', // Subject line
-    html: `<p>Por favor, haz clic en el siguiente enlace para verificar tu cuenta: <a href="${verificationLink}">${verificationLink}</a></p>`, // html body
+    subject: 'Código de Verificación para Share Musician', // Subject line
+    html: `<p>Tu código de verificación es: <strong>${code}</strong></p><p>Por favor, introduce este código en la aplicación para verificar tu cuenta.</p>`, // html body
   };
 
   await transporter.sendMail(mailOptions);

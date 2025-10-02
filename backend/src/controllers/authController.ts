@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import  pool  from '../config/db';
-import { registerUser, loginUser } from '../services/authService';
+import { registerUser, loginUser, verifyEmail } from '../services/authService';
 
 export const testDbConnection = async (req: Request, res: Response) => {
   try {
@@ -71,6 +71,58 @@ export const register = async (req: Request, res: Response) => {
 };
 
 
+
+/**
+ * @swagger
+ * /auth/verify-email:
+ *   post:
+ *     summary: Verifica el correo electrónico de un usuario con un código de 6 dígitos.
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Correo electrónico del usuario.
+ *               code:
+ *                 type: string
+ *                 description: Código de verificación de 6 dígitos.
+ *             required:
+ *               - email
+ *               - code
+ *     responses:
+ *       200 OK:
+ *         description: Correo electrónico verificado exitosamente.
+ *       400 Bad Request:
+ *         description: Datos de entrada inválidos o código de verificación incorrecto.
+ *       404 Not Found:
+ *         description: Usuario no encontrado.
+ *       500 Internal Server Error:
+ *         description: Error del servidor.
+ */
+export const verifyUserEmail = async (req: Request, res: Response) => {
+  const { email, code } = req.body;
+
+  try {
+    await verifyEmail(email, code);
+    res.status(200).json({ message: 'Correo electrónico verificado exitosamente.' });
+  } catch (error: any) {
+    if (error.message === 'Usuario no encontrado') {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message === 'Código de verificación inválido') {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error('Error during email verification:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
 
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
