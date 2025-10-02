@@ -170,15 +170,16 @@ export const register = async (req: Request, res: Response) => {
  *           schema:
  *             type: object
  *             properties:
- *               userId:
+ *               email:
  *                 type: string
- *                 description: ID del usuario.
+ *                 format: email
+ *                 description: Correo electrónico del usuario.
  *               password:
  *                 type: string
  *                 format: password
  *                 description: Nueva contraseña del usuario (mínimo 6 caracteres).
  *             required:
- *               - userId
+ *               - email
  *               - password
  *     responses:
  *       200 OK:
@@ -189,12 +190,18 @@ export const register = async (req: Request, res: Response) => {
  *         description: Error del servidor.
  */
 export const setUserPassword = async (req: Request, res: Response) => {
-  const { userId, password } = req.body;
+  const { email, password } = req.body;
 
   try {
-    await setPassword(userId, password);
+    await setPassword(email, password);
     res.status(200).json({ message: 'Contraseña establecida exitosamente y usuario activado.' });
   } catch (error: any) {
+    if (error.message === 'Correo electrónico no verificado. Por favor, verifica tu correo antes de establecer la contraseña.') {
+      return res.status(400).json({ message: error.message });
+    }
+    if (error.message === 'Usuario no encontrado') {
+      return res.status(404).json({ message: error.message });
+    }
     console.error('Error setting user password:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }

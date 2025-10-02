@@ -30,14 +30,14 @@ export const registerUser = async (email: string, name: string, phone: string): 
   }
 };
 
-export const setPassword = async (userId: string, password: string): Promise<void> => {
+export const setPassword = async (email: string, password: string): Promise<void> => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
     const userResult = await client.query(
-      'SELECT email_verified FROM users WHERE user_id = $1',
-      [userId]
+      'SELECT user_id, email_verified FROM users WHERE email = $1',
+      [email]
     );
     const user = userResult.rows[0];
 
@@ -51,14 +51,29 @@ export const setPassword = async (userId: string, password: string): Promise<voi
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await client.query(
-      'INSERT INTO user_passwords (user_id, password) VALUES ($1, $2)',
-      [userId, hashedPassword]
+    // Verificar si ya existe una contraseña para este usuario
+    const existingPassword = await client.query(
+      'SELECT 1 FROM user_passwords WHERE user_id = $1',
+      [user.user_id]
     );
+
+    if (existingPassword.rows.length > 0) {
+      // Si ya existe, actualizarla
+      await client.query(
+        'UPDATE user_passwords SET password = $1 WHERE user_id = $2',
+        [hashedPassword, user.user_id]
+      );
+    } else {
+      // Si no existe, insertarla
+      await client.query(
+        'INSERT INTO user_passwords (user_id, password) VALUES ($1, $2)',
+        [user.user_id, hashedPassword]
+      );
+    }
 
     await client.query(
       'UPDATE users SET status = $1 WHERE user_id = $2',
-      ['active', userId]
+      ['active', user.user_id]
     );
 
     await client.query('COMMIT');
