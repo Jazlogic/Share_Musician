@@ -30,13 +30,13 @@ export const registerUser = async (email: string, name: string, phone: string): 
   }
 };
 
-export const setPassword = async (email: string, password: string): Promise<{ user: User; token: string }> => {
+export const setPassword = async (email: string, password: string, code: string): Promise<{ user: User; token: string }> => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
     const userResult = await client.query(
-      'SELECT user_id, email_verified FROM users WHERE email = $1',
+      'SELECT user_id, email_verified, verification_token FROM users WHERE email = $1',
       [email]
     );
     const user = userResult.rows[0];
@@ -47,6 +47,10 @@ export const setPassword = async (email: string, password: string): Promise<{ us
 
     if (!user.email_verified) {
       throw new Error('Correo electrónico no verificado. Por favor, verifica tu correo antes de establecer la contraseña.');
+    }
+
+    if (user.verification_token !== code) {
+      throw new Error('Código de verificación inválido.');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -72,7 +76,7 @@ export const setPassword = async (email: string, password: string): Promise<{ us
     }
 
     await client.query(
-      'UPDATE users SET status = $1 WHERE user_id = $2',
+      'UPDATE users SET status = $1, verification_token = NULL WHERE user_id = $2',
       ['active', user.user_id]
     );
 

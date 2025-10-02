@@ -178,9 +178,13 @@ export const register = async (req: Request, res: Response) => {
  *                 type: string
  *                 format: password
  *                 description: Nueva contraseña del usuario (mínimo 6 caracteres).
+ *               code:
+ *                 type: string
+ *                 description: Código de verificación de 6 dígitos enviado al correo electrónico del usuario.
  *             required:
  *               - email
  *               - password
+ *               - code
  *     responses:
  *       200 OK:
  *         description: Contraseña establecida exitosamente y usuario activado. Retorna el usuario y un token de autenticación.
@@ -204,10 +208,10 @@ export const register = async (req: Request, res: Response) => {
  *         description: Error del servidor.
  */
 export const setUserPassword = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { email, password, code } = req.body;
 
   try {
-    const { user, token } = await setPassword(email, password);
+    const { user, token } = await setPassword(email, password, code);
     res.status(200).json({ message: 'Contraseña establecida exitosamente y usuario activado.', user, token });
   } catch (error: any) {
     if (error.message === 'Correo electrónico no verificado. Por favor, verifica tu correo antes de establecer la contraseña.') {
@@ -215,6 +219,9 @@ export const setUserPassword = async (req: Request, res: Response) => {
     }
     if (error.message === 'Usuario no encontrado') {
       return res.status(404).json({ message: error.message });
+    }
+    if (error.message === 'Código de verificación inválido.') {
+      return res.status(400).json({ message: error.message });
     }
     console.error('Error setting user password:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
