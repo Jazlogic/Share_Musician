@@ -165,7 +165,7 @@ export const loginUser = async (email: string, password: string): Promise<{ user
       throw new Error('Correo electrónico no verificado');
     }
 
-    const token = jwt.sign({ userId: user.user_id, role: user.role }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user.user_id, role: user.role }, process.env.JWT_SECRET as string, { expiresIn: '24h' });
 
     return { user, token };
   } finally {

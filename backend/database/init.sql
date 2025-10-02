@@ -34,7 +34,8 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     email_verified BOOLEAN DEFAULT FALSE,
-    verification_token VARCHAR(255) UNIQUE
+    verification_token VARCHAR(255) UNIQUE,
+    profileKey VARCHAR(255) DEFAULT NULL
 );
 select * from users;
 insert into  users (name, email, phone, role) values ('Jefry Agustin astacio Sanchez','astaciosanchezjefryagustin@gmail.com','829-441-9998','admin');
@@ -87,3 +88,16 @@ $$;
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255) UNIQUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS profileKey VARCHAR(255) DEFAULT NULL;
+
+-- Tabla para Publicaciones (Posts)
+CREATE TABLE IF NOT EXISTS posts (
+    post_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    content TEXT,
+    postKey VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+select * from posts;

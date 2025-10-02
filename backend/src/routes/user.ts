@@ -6,6 +6,7 @@ import {
   updateUserController,
   deleteUserController,
   verifyEmailController,
+  updateProfileKeyController,
 } from '../controllers/userController';
 import { authenticateToken } from '../middleware/authMiddleware';
 
@@ -123,6 +124,51 @@ router.get('/:id', authenticateToken, getUserByIdController);
  *         description: Some error happened
  */
 router.put('/:id', authenticateToken, updateUserController);
+
+/**
+ * @swagger
+ * /users/{id}/profile:
+ *   put:
+ *     summary: Actualiza la clave de la foto de perfil de un usuario por id.
+ *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: El ID del usuario.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               profileKey:
+ *                 type: string
+ *                 description: La clave de la foto de perfil en el bucket de iDrive e2.
+ *             required:
+ *               - profileKey
+ *     responses:
+ *       200:
+ *         description: La clave de la foto de perfil del usuario fue actualizada.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Solicitud inválida.
+ *       401:
+ *         description: No autorizado.
+ *       404:
+ *         description: El usuario no fue encontrado.
+ *       500:
+ *         description: Error del servidor.
+ */
+router.put('/:id/profile', authenticateToken, updateProfileKeyController);
 
 /**
  * @swagger

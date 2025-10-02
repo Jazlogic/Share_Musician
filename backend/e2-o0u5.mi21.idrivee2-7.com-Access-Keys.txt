@@ -1,0 +1,3 @@
+Endpoint: o0u5.mi21.idrivee2-7.com
+Access Key ID: 7OiOHBhYMDtMG1WvNGFu
+Secret Access Key: jIh1cn5pnWmriQrNw3m4pFEdvdXKiZkVMLvyTQ7E

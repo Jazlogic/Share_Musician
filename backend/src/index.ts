@@ -1,15 +1,23 @@
 import express from 'express';
-import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
+import dotenv from 'dotenv';
+import cors from 'cors'; // Import cors
+
 import authRoutes from './routes/auth';
 import churchRoutes from './routes/church';
 import userRoutes from './routes/user'; // Import the new user routes
+import storageRoutes from './routes/storage';
+import postRoutes from './routes/post'; // Import the new post routes
 
 dotenv.config();
 
 const app = express();
+const port = process.env.PORT || 3001;
+
+app.use(cors()); // Use cors middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const options = {
   definition: {
@@ -25,6 +33,13 @@ const options = {
       },
     ],
     components: {
+      securitySchemes: {
+        BearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
       schemas: {
         User: {
           type: 'object',
@@ -121,7 +136,7 @@ const options = {
       },
     },
   },
-  apis: ['./src/routes/*.ts', './src/controllers/*.ts'], // Path to the API docs
+  apis: ['./src/routes/*.ts', './src/controllers/*.ts', './src/routes/storage.ts', './src/routes/post.ts'], // Path to the API docs
 };
 
 const swaggerSpec = swaggerJsdoc(options);
@@ -130,10 +145,17 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/auth', authRoutes);
 app.use('/churches', churchRoutes);
-app.use('/users', userRoutes); // Use the new user routes
+app.use('/users', userRoutes);
+app.use('/storage', storageRoutes);
+app.use('/posts', postRoutes); // Use the new post routes
 
 app.get('/', (req, res) => {
   res.send('Share Musician API is running');
+});
+
+// Handle 404 errors
+app.use((req, res, next) => {
+  res.status(404).json({ message: 'Not Found' });
 });
 
 const PORT = process.env.PORT || 3001;

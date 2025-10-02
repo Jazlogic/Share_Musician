@@ -65,6 +65,26 @@ export const deleteUserController = async (req: Request, res: Response) => {
   }
 };
 
+export const updateProfileKeyController = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { profileKey } = req.body;
+
+    if (!profileKey) {
+      return res.status(400).json({ message: 'profileKey es requerido' });
+    }
+
+    const updatedUser = await userService.updateProfileKey(id, profileKey);
+    if (updatedUser) {
+      res.status(200).json(updatedUser);
+    } else {
+      res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const verifyEmailController = async (req: Request, res: Response) => {
   try {
     const { token } = req.body;
