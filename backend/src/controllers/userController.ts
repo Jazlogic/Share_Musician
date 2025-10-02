@@ -44,7 +44,7 @@ export const updateUserController = async (req: Request, res: Response) => {
     if (updatedUser) {
       res.status(200).json(updatedUser);
     } else {
-      res.status(404).json({ message: 'User not found' });
+      res.status(404).json({ message: 'Usuario no encontrado' });
     }
   } catch (error: any) {
     res.status(500).json({ message: error.message });
