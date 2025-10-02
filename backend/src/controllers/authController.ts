@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import  pool  from '../config/db';
-import { registerUser, loginUser, verifyEmail, setPassword, resendVerificationEmail } from '../services/authService';
+import { registerUser, loginUser, verifyEmail, setPassword, resendVerificationEmail, requestPasswordReset } from '../services/authService';
 
 export const testDbConnection = async (req: Request, res: Response) => {
   try {
@@ -9,6 +9,49 @@ export const testDbConnection = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Error al conectar a la base de datos:', error.message);
     res.status(500).json({ message: 'Error al conectar a la base de datos.', error: error.message });
+  }
+};
+
+/**
+ * @swagger
+ * /auth/request-password-reset:
+ *   post:
+ *     summary: Solicita un restablecimiento de contraseña enviando un correo electrónico con un token.
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Correo electrónico del usuario que solicita el restablecimiento de contraseña.
+ *             required:
+ *               - email
+ *     responses:
+ *       200 OK:
+ *         description: Correo electrónico de restablecimiento de contraseña enviado exitosamente.
+ *       404 Not Found:
+ *         description: Usuario no encontrado.
+ *       500 Internal Server Error:
+ *         description: Error del servidor.
+ */
+export const requestPasswordResetController = async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  try {
+    await requestPasswordReset(email);
+    res.status(200).json({ message: 'Correo electrónico de restablecimiento de contraseña enviado exitosamente.' });
+  } catch (error: any) {
+    if (error.message === 'Usuario no encontrado') {
+      return res.status(404).json({ message: error.message });
+    }
+    console.error('Error requesting password reset:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
 

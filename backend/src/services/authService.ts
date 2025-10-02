@@ -3,6 +3,7 @@ import { User } from '../types/db';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { generateVerificationCode, sendVerificationEmail } from '../utils/email';
+import { v4 as uuidv4 } from 'uuid';
 
 export const registerUser = async (email: string, name: string, phone: string): Promise<User> => {
   const client = await pool.connect();
@@ -171,6 +172,42 @@ export const resendVerificationEmail = async (email: string): Promise<void> => {
     );
 
     await sendVerificationEmail(user.email, newVerificationCode);
+
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+export const requestPasswordReset = async (email: string): Promise<void> => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const userResult = await client.query(
+      'SELECT user_id, email FROM users WHERE email = $1',
+      [email]
+    );
+    const user = userResult.rows[0];
+
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    const resetToken = uuidv4();
+    const resetTokenExpires = new Date(Date.now() + 3600000); // 1 hora de validez
+
+    await client.query(
+      'UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE user_id = $3',
+      [resetToken, resetTokenExpires, user.user_id]
+    );
+
+    // Enviar correo electrónico con el token de restablecimiento
+    // Por ahora, usaremos sendVerificationEmail como placeholder
+    await sendVerificationEmail(user.email, resetToken); // TODO: Crear una función sendPasswordResetEmail
 
     await client.query('COMMIT');
   } catch (error) {
