@@ -61,4 +61,14 @@ export const AppColors = {
     textDark: 'rgba(236, 237, 238, 1)', // Texto claro para fondos oscuros
     textLight: 'rgba(17, 24, 28, 1)', // Texto oscuro para fondos claros
   },
+  items:{
+    backgroundLight: 'rgba(255, 255, 255, 0.87)',
+    backgroundDark: 'rgba(0, 0, 0, 0.69)',
+    borderTopLight: 'rgba(238, 238, 238, 1)',
+    borderBottomDark: 'rgba(51, 51, 51, 1)',
+    borderLight: 'rgb(3, 179, 255)',
+    borderDark: 'rgb(90, 145, 255)',
+    textDark: 'rgba(236, 237, 238, 1)',
+    textLight: 'rgba(17, 24, 28, 1)',
+  },
 };

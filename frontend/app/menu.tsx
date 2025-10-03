@@ -16,6 +16,7 @@ export default function MenuScreen() {
   const gradientStart = useThemeColor({ light: AppColors.background.gradientStartLight, dark: AppColors.background.gradientStartDark }, 'background');
   const gradientEnd = useThemeColor({ light: AppColors.background.gradientEndLight, dark: AppColors.background.gradientEndDark }, 'background');
   const menuTitleColor = useThemeColor({ light: AppColors.text.white, dark: AppColors.text.white }, 'text');
+  const backgroundColor = useThemeColor({ light: AppColors.items.backgroundLight, dark: AppColors.items.backgroundDark }, 'background');
   // const menuItemsBg = useThemeColor({ light: AppColors.background.menuContainer, dark: AppColors.background.menuContainer }, 'background'); // Ya no es necesario
   // const borderBottom = useThemeColor({ light: AppColors.border.default, dark: AppColors.border.default }, 'borderTopColor'); // Ya no es necesario
   // const menuItemTextColor = useThemeColor({ light: AppColors.text.black, dark: AppColors.text.black }, 'text'); // Ya no es necesario
@@ -92,7 +93,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', // Añadido
     paddingVertical: 15,
     paddingHorizontal: 10, // Añadido
-    backgroundColor: 'rgba(255, 255, 255, 0.1)', // Añadido
     borderRadius: 10, // Añadido
     marginBottom: 10, // Añadido
     // borderBottomWidth: 1, // Eliminado
