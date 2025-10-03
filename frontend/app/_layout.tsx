@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { UserProvider } from './context/UserContext';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -16,8 +17,9 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <UserProvider>
+          <Stack>
+            <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="register" options={{ headerShown: false }} />
         <Stack.Screen name="verify-email" options={{ headerShown: false }} />
         <Stack.Screen name="set-password" options={{ headerShown: false }} />
@@ -32,7 +34,8 @@ export default function RootLayout() {
         <Stack.Screen name="perfil" options={{ headerShown: false }} />
         <Stack.Screen name="pagos" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
+          </Stack>
+        </UserProvider>
       <StatusBar style="auto" />
     </ThemeProvider>
     </GestureHandlerRootView>

@@ -1,3 +1,5 @@
+import BottomNavigationBar from "@/components/BottomNavigationBar";
+
 export const AppColors = {
   // Colores primarios
   primary: {
@@ -36,6 +38,7 @@ export const AppColors = {
     light: 'rgba(17, 24, 28, 1)', // Texto oscuro para fondos claros
     white: 'rgba(255, 255, 255, 1)', // Texto blanco
     black: 'rgba(0, 0, 0, 1)', // Texto negro
+    secondary: 'rgba(155, 161, 166, 1)', // Gris medio para texto secundario
   },
   // Colores de iconos
   icon: {
@@ -47,5 +50,15 @@ export const AppColors = {
   border: {
     default: 'rgba(238, 238, 238, 1)', // Borde por defecto
     dark: 'rgba(51, 51, 51, 1)', // Borde oscuro
+  },
+  BottomNavigationBar: {
+    backgroundLight: 'rgba(109, 157, 255, 0.87)', // Fondo de la barra de navegación inferior con transparencia
+    backgroundDark: 'rgba(2, 29, 82, 0.87)',
+    borderTopLight: 'rgba(238, 238, 238, 1)', // Borde claro
+    borderBottomDark: 'rgba(51, 51, 51, 1)', // Borde oscuro
+    borderLight: 'rgb(3, 179, 255)', // Borde claro
+    borderDark: 'rgb(90, 145, 255)', // Borde oscuro
+    textDark: 'rgba(236, 237, 238, 1)', // Texto claro para fondos oscuros
+    textLight: 'rgba(17, 24, 28, 1)', // Texto oscuro para fondos claros
   },
 };

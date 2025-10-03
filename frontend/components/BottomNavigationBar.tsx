@@ -13,14 +13,15 @@ import WalletIcon from '@/assets/images/icons/wallet.png';
 
 
 export default function BottomNavigationBar() {
-  const backgroundColor = useThemeColor({ light: AppColors.background.bottomNav, dark: AppColors.background.bottomNav }, 'background');
-  const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
+  const backgroundColor = useThemeColor({ light: AppColors.BottomNavigationBar.backgroundLight, dark: AppColors.BottomNavigationBar.backgroundDark }, 'background');
+  const textColor = useThemeColor({ light: AppColors.BottomNavigationBar.textLight, dark: AppColors.BottomNavigationBar.textDark }, 'text');
   const iconBgColor = useThemeColor({ light: '#777', dark: '#333' }, 'icon');
-  const borderTopColor = useThemeColor({ light: '#333', dark: '#333' }, 'borderTopColor');
+  const borderTopColor = useThemeColor({ light: AppColors.BottomNavigationBar.borderTopLight, dark: AppColors.BottomNavigationBar.borderBottomDark }, 'borderTopColor');
+  const borderColor = useThemeColor({ light: AppColors.BottomNavigationBar.borderLight, dark: AppColors.BottomNavigationBar.borderDark }, 'borderTopColor');
 
  
   return (
-    <View style={[styles.bottomNav, { backgroundColor, borderTopColor }]}>
+    <View style={[styles.bottomNav, { backgroundColor, borderTopColor ,borderColor}]}>
       
       <Link href="/home" asChild>
         <TouchableOpacity style={styles.navItem}>
@@ -31,7 +32,7 @@ export default function BottomNavigationBar() {
       <Link href="/wallet" asChild>
         <TouchableOpacity style={styles.navItem}>
           <IconSymbol size={34} source={WalletIcon} style={{ borderRadius: 15, backgroundColor: iconBgColor }} />
-          <Text style={[styles.navText, { color: textColor }]}>Billetera</Text>
+          <Text style={[styles.navText, { color: textColor}]}>Billetera</Text>
         </TouchableOpacity>
       </Link>
       <Link href="/menu" asChild>
@@ -65,12 +66,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderRadius: 25,
     borderWidth: 2.5,
-    borderColor: 'rgb(90, 145, 255)',
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    marginBottom: 5,
+    marginBottom: 10,
+    margin: 5,
   },
   navItem: {
     alignItems: 'center',

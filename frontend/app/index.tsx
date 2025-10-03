@@ -3,13 +3,13 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'reac
 import { Link, useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SvgXml } from 'react-native-svg';
-import musicalNoteSvg from '../assets/images/musical-note.svg';
 import { api, MessageResponse } from '../services/api';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function WelcomeScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -31,8 +31,13 @@ export default function WelcomeScreen() {
       console.log('Sending login request with:', { email, password });
       const response = await api.post<MessageResponse>('/auth/login', { email, password });
       if (response.status === 200) {
-        if (response.data.user && response.data.user.name) {
+        if (response.data.user && response.data.user.name && response.data.user.user_id && response.data.token) {
           await AsyncStorage.setItem('userName', response.data.user.name);
+          console.log('Stored userName:', response.data.user.name);
+          await AsyncStorage.setItem('userId', response.data.user.user_id);
+          console.log('Stored userId:', response.data.user.user_id);
+          await AsyncStorage.setItem('userToken', response.data.token);
+          console.log('Stored userToken:', response.data.token);
         }
         router.replace('/home');
       } else {
@@ -60,14 +65,26 @@ export default function WelcomeScreen() {
           value={email}
           onChangeText={setEmail}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña"
-          placeholderTextColor="#A9A9A9"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+        <View style={styles.passwordInputContainer}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Contraseña"
+            placeholderTextColor="#A9A9A9"
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity
+            style={styles.togglePasswordButton}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            <Ionicons
+              name={showPassword ? 'eye-off' : 'eye'}
+              size={24}
+              color="#A9A9A9"
+            />
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Text style={styles.loginButtonText}>INICIAR SESIÓN</Text>
         </TouchableOpacity>
@@ -88,10 +105,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    
   },
   content: {
     alignItems: 'center',
     width: '80%',
+    marginBottom: 10,
   },
   welcomeText: {
     fontSize: 36,
@@ -108,6 +127,24 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#FFFFFF',
     marginBottom: 15,
+  },
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 25,
+    marginBottom: 15,
+  },
+  passwordInput: {
+    flex: 1,
+    height: 50,
+    paddingHorizontal: 20,
+    fontSize: 18,
+    color: '#FFFFFF',
+  },
+  togglePasswordButton: {
+    padding: 10,
   },
   loginButton: {
     width: '100%',

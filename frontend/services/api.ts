@@ -13,11 +13,13 @@ export interface ApiResponse<T> {
 
 export interface User {
   name: string;
+  user_id?: string;
 }
 
 export interface MessageResponse {
   message: string;
   user?: User;
+  token?: string;
 }
 
 async function request<T>(url: string, options?: RequestOptions): Promise<ApiResponse<T>> {

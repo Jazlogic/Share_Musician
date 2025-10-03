@@ -2,9 +2,8 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
 
-import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
+import { AppColors } from '../../theme/colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 import HomeIcon from '@/assets/images/icons/home.png';
@@ -16,7 +15,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: AppColors.primary.accent,
         headerShown: false,
         tabBarButton: ({ delayLongPress, disabled, onBlur, onFocus, onLongPress, onPressIn, onPressOut, ref, ...props }) => <TouchableOpacity {...props} />,
         animation: "none", // Disable animations for web to prevent useNativeDriver warning
