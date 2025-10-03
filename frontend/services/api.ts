@@ -1,4 +1,6 @@
-const BASE_URL = 'http://localhost:3001';
+// const BASE_URL = 'http://localhost:3001';
+// const BASE_URL:string = 'http://172.20.10.5:3001';
+const BASE_URL = 'http://192.168.56.130:3001';
 
 interface RequestOptions extends RequestInit {
   headers?: Record<string, string>;
@@ -9,8 +11,13 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+export interface User {
+  name: string;
+}
+
 export interface MessageResponse {
   message: string;
+  user?: User;
 }
 
 async function request<T>(url: string, options?: RequestOptions): Promise<ApiResponse<T>> {

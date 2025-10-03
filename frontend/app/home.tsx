@@ -1,8 +1,28 @@
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, ImageBackground, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Link } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import BottomNavigationBar from '@/components/BottomNavigationBar';
+
 
 export default function HomeScreen() {
+  const [userName, setUserName] = useState('Usuario');
+
+  useEffect(() => {
+    const loadUserName = async () => {
+      try {
+        const storedUserName = await AsyncStorage.getItem('userName');
+        if (storedUserName) {
+          setUserName(storedUserName);
+        }
+      } catch (error) {
+        console.error('Error loading user name from AsyncStorage', error);
+      }
+    };
+
+    loadUserName();
+  }, []);
+
   return (
     <LinearGradient
       colors={['#1A2B4C', '#3366CC']}
@@ -11,7 +31,7 @@ export default function HomeScreen() {
       end={{ x: 1, y: 1 }}
     >
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <Text style={styles.welcomeText}>¡Bienvenido, Alex!</Text>
+        <Text style={styles.welcomeText}>¡Bienvenido, {userName}!</Text>
 
         <Text style={styles.sectionTitle}>Tus Listas de Reproducción</Text>
         <View style={styles.playlistsContainer}>
@@ -62,32 +82,8 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      <View style={styles.bottomNav}>
-        <Link href="/home" asChild>
-          <TouchableOpacity style={styles.navItem}>
-            <View style={styles.navIconPlaceholder} />
-            <Text style={styles.navText}>Inicio</Text>
-          </TouchableOpacity>
-        </Link>
-        <Link href="/settings" asChild>
-          <TouchableOpacity style={styles.navItem}>
-            <View style={styles.navIconPlaceholder} />
-            <Text style={styles.navText}>Configuración</Text>
-          </TouchableOpacity>
-        </Link>
-        <Link href="/wallet" asChild>
-          <TouchableOpacity style={styles.navItem}>
-            <View style={styles.navIconPlaceholder} />
-            <Text style={styles.navText}>Billetera</Text>
-          </TouchableOpacity>
-        </Link>
-        <Link href="/dashboard" asChild>
-          <TouchableOpacity style={styles.navItem}>
-            <View style={styles.navIconPlaceholder} />
-            <Text style={styles.navText}>Dashboard</Text>
-          </TouchableOpacity>
-        </Link>
-      </View>
+      {/* Bottom Navigation */}
+      <BottomNavigationBar />
     </LinearGradient>
   );
 }
@@ -102,7 +98,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100, // Space for bottom navigation
   },
   welcomeText: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 30,
@@ -119,23 +115,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 30,
   },
   playlistItem: {
-    width: '48%', // Adjust as needed
+    width: '48%',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 10,
+    padding: 15,
     marginBottom: 15,
     alignItems: 'center',
   },
   playlistImagePlaceholder: {
-    width: 150,
-    height: 150,
-    borderRadius: 10,
-    marginBottom: 5,
-    backgroundColor: '#333', // Placeholder background color
+    width: 80,
+    height: 80,
+    backgroundColor: '#333',
+    borderRadius: 40,
+    marginBottom: 10,
+    
   },
   playlistText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 16,
     textAlign: 'center',
   },
   recommendedContainer: {
@@ -160,29 +159,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     textAlign: 'center',
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    paddingVertical: 10,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  navItem: {
-    alignItems: 'center',
-  },
-  navIconPlaceholder: {
-    width: 30,
-    height: 30,
-    backgroundColor: '#333', // Placeholder background color
-    marginBottom: 5,
-  },
-  navText: {
-    color: '#FFFFFF',
-    fontSize: 12,
   },
 });

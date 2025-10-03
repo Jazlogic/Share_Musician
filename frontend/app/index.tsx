@@ -1,7 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { Link, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SvgXml } from 'react-native-svg';
 import musicalNoteSvg from '../assets/images/musical-note.svg';
 import { api, MessageResponse } from '../services/api';
@@ -11,11 +12,28 @@ export default function WelcomeScreen() {
   const [password, setPassword] = useState('');
   const router = useRouter();
 
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const storedUserName = await AsyncStorage.getItem('userName');
+        if (storedUserName) {
+          router.replace('/home');
+        }
+      } catch (error) {
+        console.error('Error checking login status:', error);
+      }
+    };
+    checkLoginStatus();
+  }, []);
+
   const handleLogin = async () => {
     try {
       console.log('Sending login request with:', { email, password });
       const response = await api.post<MessageResponse>('/auth/login', { email, password });
       if (response.status === 200) {
+        if (response.data.user && response.data.user.name) {
+          await AsyncStorage.setItem('userName', response.data.user.name);
+        }
         router.replace('/home');
       } else {
         Alert.alert('Error', response.data.message || 'Login failed');
