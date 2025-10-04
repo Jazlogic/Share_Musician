@@ -15,8 +15,8 @@ import PagosIcon from '@/assets/images/icons/pagos.png';
 export default function MenuScreen() {
   const gradientStart = useThemeColor({ light: AppColors.background.gradientStartLight, dark: AppColors.background.gradientStartDark }, 'background');
   const gradientEnd = useThemeColor({ light: AppColors.background.gradientEndLight, dark: AppColors.background.gradientEndDark }, 'background');
-  const menuTitleColor = useThemeColor({ light: AppColors.text.white, dark: AppColors.text.white }, 'text');
   const backgroundColor = useThemeColor({ light: AppColors.items.backgroundLight, dark: AppColors.items.backgroundDark }, 'background');
+  const menuTitleColor = useThemeColor({ light: AppColors.items.textLight, dark: AppColors.items.textDark }, 'text');
   // const menuItemsBg = useThemeColor({ light: AppColors.background.menuContainer, dark: AppColors.background.menuContainer }, 'background'); // Ya no es necesario
   // const borderBottom = useThemeColor({ light: AppColors.border.default, dark: AppColors.border.default }, 'borderTopColor'); // Ya no es necesario
   // const menuItemTextColor = useThemeColor({ light: AppColors.text.black, dark: AppColors.text.black }, 'text'); // Ya no es necesario
@@ -32,33 +32,33 @@ export default function MenuScreen() {
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <Text style={[styles.menuTitle, { color: menuTitleColor }]}>Menú</Text>
 
-        <View style={styles.menuItemsContainer}> {/* Eliminado backgroundColor dinámico */}
-          <Link href="/solicitudes" asChild>
+        <View style={styles.menuItemsContainer}>
+          <Link style={[styles.menuItem, { backgroundColor }]} href="/solicitudes" asChild>
             <TouchableOpacity style={styles.menuItem}>
               <IconSymbol style={[styles.IconSymbol, { backgroundColor: iconBgColor }]} source={SolicitudesIcon} />
-              <Text style={styles.menuItemText}>Solicitudes</Text>
-              <Ionicons name="chevron-forward-outline" size={24} color={AppColors.text.white} />
+              <Text style={[styles.menuItemText,{color: menuTitleColor}]}>Solicitudes</Text>
+              <Ionicons name="chevron-forward-outline" size={24} color={menuTitleColor} />
             </TouchableOpacity>
           </Link>
-          <Link href="/agenda" asChild>
+          <Link style={[styles.menuItem, { backgroundColor }]} href="/agenda" asChild>
             <TouchableOpacity style={styles.menuItem}>
               <IconSymbol  style={[styles.IconSymbol, { backgroundColor: iconBgColor }]} source={AgendaIcon} />
-              <Text style={styles.menuItemText}>Agenda</Text>
-              <Ionicons name="chevron-forward-outline" size={24} color={AppColors.text.white} />
+              <Text style={[styles.menuItemText, { color: menuTitleColor }]}>Agenda</Text>
+              <Ionicons name="chevron-forward-outline" size={24} color={menuTitleColor} />
             </TouchableOpacity>
           </Link>
-          <Link href="/perfil" asChild>
+          <Link style={[styles.menuItem, { backgroundColor }]} href="/perfil" asChild>
             <TouchableOpacity style={styles.menuItem}>
               <IconSymbol style={[styles.IconSymbol, { backgroundColor: iconBgColor }]} source={PerfilIcon} />
-              <Text style={styles.menuItemText}>Perfil</Text>
-              <Ionicons name="chevron-forward-outline" size={24} color={AppColors.text.white} />
+              <Text style={[styles.menuItemText, { color: menuTitleColor }]}>Perfil</Text>
+              <Ionicons name="chevron-forward-outline" size={24} color={menuTitleColor} />
             </TouchableOpacity>
           </Link>
-          <Link href="/pagos" asChild>
+          <Link style={[styles.menuItem, { backgroundColor }]} href="/pagos" asChild>
             <TouchableOpacity style={styles.menuItem}>
               <IconSymbol  style={[styles.IconSymbol, { backgroundColor: iconBgColor }]} source={PagosIcon} />
-              <Text style={styles.menuItemText}>Pagos</Text>
-              <Ionicons name="chevron-forward-outline" size={24} color={AppColors.text.white} />
+              <Text style={[styles.menuItemText, { color: menuTitleColor }]}>Pagos</Text>
+              <Ionicons name="chevron-forward-outline" size={24} color={menuTitleColor} />
             </TouchableOpacity>
           </Link>
         </View>
@@ -91,6 +91,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between', // Añadido
+    // backgroundColor: 'rgba(255, 255, 255, 0.1)',
     paddingVertical: 15,
     paddingHorizontal: 10, // Añadido
     borderRadius: 10, // Añadido
@@ -101,7 +102,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 10, // Ajustado
     fontSize: 16, // Ajustado
-    color: AppColors.text.white, // Ajustado
   },
   IconSymbol: {
     width: 28,
