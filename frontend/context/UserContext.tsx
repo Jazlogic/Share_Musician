@@ -110,8 +110,14 @@ export const UserProvider = ({ children }: UserProviderProps) => {
       console.log('Intentando obtener URL de descarga para profileKey:', profileKey);
       const encodedProfileKey = encodeURIComponent(profileKey);
       console.log('Encoded profileKey:', encodedProfileKey);
-      const url = `${BASE_URL}/users/profile-image-proxy/${encodedProfileKey}`;
-      return url;
+       const response = await api.get<{ downloadURL: string}>(`/users/profile-image/${encodedProfileKey}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log('Respuesta de la solicitud:', response.data.downloadURL);
+      const url = `/users/profile-image-proxy/${encodedProfileKey}`;
+      return response.data.downloadURL;
     } catch (error) {
       console.error('Error fetching profile image URL:', error);
       return null;
