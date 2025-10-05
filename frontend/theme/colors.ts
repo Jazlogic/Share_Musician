@@ -38,6 +38,10 @@ export const AppColors = {
     white: 'rgba(255, 255, 255, 1)', // Texto blanco
     black: 'rgba(0, 0, 0, 1)', // Texto negro
     secondary: 'rgba(155, 161, 166, 1)', // Gris medio para texto secundario
+    defaultLight: 'rgba(17, 24, 28, 1)',
+    defaultDark: 'rgba(236, 237, 238, 1)',
+    subtitleLight: 'rgba(104, 112, 118, 1)',
+    subtitleDark: 'rgba(155, 161, 166, 1)',
   },
   // Colores de iconos
   icon: {
@@ -71,5 +75,21 @@ export const AppColors = {
     borderDark: 'rgb(90, 145, 255)',
     textDark: 'rgba(236, 237, 238, 1)',
     textLight: 'rgba(17, 24, 28, 1)',
+  },
+  card: {
+    backgroundLight: 'rgba(255, 255, 255, 1)',
+    backgroundDark: 'rgba(33, 33, 33, 1)',
+  },
+  button: {
+    backgroundLight: 'rgba(51, 102, 204, 1)',
+    backgroundDark: 'rgba(10, 126, 164, 1)',
+    textLight: 'rgba(255, 255, 255, 1)',
+    textDark: 'rgba(255, 255, 255, 1)',
+  },
+  transaction: {
+    incomeLight: 'rgba(46, 204, 113, 1)',
+    incomeDark: 'rgba(46, 204, 113, 1)',
+    expenseLight: 'rgba(231, 76, 60, 1)',
+    expenseDark: 'rgba(231, 76, 60, 1)',
   },
 };
