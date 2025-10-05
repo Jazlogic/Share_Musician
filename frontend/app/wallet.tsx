@@ -5,6 +5,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { AppColors } from '../theme/colors';
 import BottomNavigationBar from '@/components/BottomNavigationBar';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function WalletScreen() {
   const gradientStart = useThemeColor({ light: AppColors.background.gradientStartLight, dark: AppColors.background.gradientStartDark }, 'background');
@@ -15,16 +16,15 @@ export default function WalletScreen() {
   const itemTextColor = useThemeColor({ light: AppColors.items.textLight, dark: AppColors.items.textDark }, 'text');
 
   const currentBalance = '$2,450.50';
-
-  interface paymentMethod {
+  interface PaymentMethod {
     id: string;
     name: string;
-    icon: string;
+    icon: keyof typeof Ionicons.glyphMap;
   }
-  const paymentMethods: paymentMethod[] = [
-    { id: '1', name: 'Tarjeta de Crédito', icon: 'creditCard' },
-    { id: '2', name: 'PayPal', icon: 'paypal' },
-    { id: '3', name: 'Transferencia Bancaria', icon: 'bank' },
+  const paymentMethods: PaymentMethod[] = [
+    { id: '1', name: 'Tarjeta de Crédito', icon: "card" },
+    { id: '2', name: 'PayPal', icon: "logo-paypal" },
+    { id: '3', name: 'Transferencia Bancaria', icon: "trending-up" },
   ];
 
   const transactions = [
@@ -59,7 +59,8 @@ export default function WalletScreen() {
           <Text style={[styles.sectionTitle, { color }]}>Métodos de Pago</Text>
           {paymentMethods.map((method) => (
             <View key={method.id} style={[styles.paymentMethodItem, { backgroundColor: backgrounIitemColor }]}>
-              <IconSymbol name={method.icon} size={24} color={itemTextColor} />
+              {/* <IconSymbol name={method.icon} size={24} color={itemTextColor} /> */}
+               <Ionicons name={method.icon} size={24} color={AppColors.text.white} />
               <Text style={[styles.paymentMethodText, { color: itemTextColor }]}>{method.name}</Text>
             </View>
           ))}
