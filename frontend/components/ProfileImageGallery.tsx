@@ -9,6 +9,7 @@ import {
   Switch,
   ActivityIndicator,
   Alert,
+  Modal, // Importar Modal
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,6 +31,8 @@ const ProfileImageGallery: React.FC<ProfileImageGalleryProps> = ({
   const [loading, setLoading] = useState(true);
   const [isPublic, setIsPublic] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null); // Nuevo estado para la imagen seleccionada
+  const [modalVisible, setModalVisible] = useState(false); // Nuevo estado para la visibilidad del modal
 
   useEffect(() => {
     loadImages();
@@ -89,6 +92,11 @@ const ProfileImageGallery: React.FC<ProfileImageGalleryProps> = ({
     }
   };
 
+  const handleImagePress = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+    setModalVisible(true);
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -124,7 +132,7 @@ const ProfileImageGallery: React.FC<ProfileImageGalleryProps> = ({
             <TouchableOpacity
               key={index}
               style={styles.imageContainer}
-              onPress={() => handleSelectImage(image.profileKey, image.url)}
+              onPress={() => handleImagePress(image.url)} // Modificado para abrir el modal
             >
               <Image source={{ uri: image.url }} style={styles.image} />
               <Text style={styles.imageTitle}>{image.title}</Text>
@@ -151,6 +159,38 @@ const ProfileImageGallery: React.FC<ProfileImageGalleryProps> = ({
           <Text style={styles.uploadingText}>Subiendo imagen...</Text>
         </View>
       )}
+
+      {/* Modal para la visualización de imagen en pantalla completa */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.fullScreenImageContainer}>
+          <TouchableOpacity
+            style={styles.fullScreenCloseButton}
+            onPress={() => setModalVisible(false)}
+          >
+            <Ionicons name="close-circle" size={30} color={AppColors.text.white} />
+          </TouchableOpacity>
+          {selectedImage && (
+            <Image source={{ uri: selectedImage }} style={styles.fullScreenImage} resizeMode="contain" />
+          )}
+          <TouchableOpacity
+            style={styles.setAsProfileButton}
+            onPress={() => {
+              const selectedImg = images.find(img => img.url === selectedImage);
+              if (selectedImg) {
+                handleSelectImage(selectedImg.profileKey, selectedImg.url);
+                setModalVisible(false);
+              }
+            }}
+          >
+            <Text style={styles.setAsProfileButtonText}>Establecer como perfil</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </LinearGradient>
   );
 };
@@ -256,6 +296,35 @@ const styles = StyleSheet.create({
     color: AppColors.text.white,
     marginTop: 10,
     fontSize: 16,
+  },
+  fullScreenImageContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: '90%',
+    height: '70%',
+  },
+  fullScreenCloseButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 1,
+  },
+  setAsProfileButton: {
+    position: 'absolute',
+    bottom: 50,
+    backgroundColor: AppColors.primary.accent,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+  },
+  setAsProfileButtonText: {
+    color: AppColors.text.white,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

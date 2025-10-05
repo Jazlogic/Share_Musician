@@ -231,7 +231,7 @@ export const getProfileImageHistoryController = async (req: Request, res: Respon
 
     const imageUrls = await Promise.all(history.map(async (item) => {
       const command = new GetObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME,
+        Bucket: process.env.IDRIVE_BUCKET_NAME,
         Key: item.profilekey,
       });
       const url = await getSignedUrl(s3, command, { expiresIn: 3600 }); // URL válida por 1 hora
@@ -266,7 +266,7 @@ export const selectProfileImageFromHistoryController = async (req: Request, res:
 
     // Actualizar la profileKey del usuario en la tabla users
     const updateResult = await pool.query(
-      'UPDATE users SET profilekey = $1 WHERE id = $2 RETURNING id, username, email, profilekey',
+      'UPDATE users SET profilekey = $1 WHERE user_id = $2 RETURNING user_id, name, email, profilekey',
       [profileKey, id]
     );
 

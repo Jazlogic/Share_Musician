@@ -110,14 +110,22 @@ const PerfilScreen = () => {
               style={styles.profileImage}
             />
           </TouchableOpacity>
-        <TouchableOpacity onPress={pickImage}>
+        <TouchableOpacity onPress={() => setShowGalleryModal(true)}>
           <View style={styles.cameraIconContainer}>
             <Ionicons name="camera" size={24} color={AppColors.text.white} />
           </View>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setShowGalleryModal(true)} style={styles.galleryButton}>
+        {/* <TouchableOpacity onPress={() => setShowGalleryModal(true)} style={styles.galleryButton}>
           <Ionicons name="images-outline" size={24} color={AppColors.text.white} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
+        {/* <TouchableOpacity onPress={pickImage}>
+          <View style={styles.cameraIconContainer}>
+            <Ionicons name="camera" size={24} color={AppColors.text.white} />
+          </View>
+        </TouchableOpacity> */}
+        {/* <TouchableOpacity onPress={() => setShowGalleryModal(true)} style={styles.galleryButton}>
+          <Ionicons name="images-outline" size={24} color={AppColors.text.white} />
+        </TouchableOpacity> */}
         <Text style={styles.userName}>{currentUser.name}</Text>
               {newProfileImage && (
         <TouchableOpacity
