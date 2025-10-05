@@ -19,9 +19,20 @@ CREATE TABLE IF NOT EXISTS users (
     active_role VARCHAR(20) DEFAULT 'musician' CHECK (active_role IN ('leader', 'musician')),
     status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('active', 'pending', 'rejected')),
     church_id UUID REFERENCES churches(churches_id) ON DELETE SET NULL,
+    profileKey VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Tabla para Posts
+CREATE TABLE IF NOT EXISTS posts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    userId UUID REFERENCES users(user_id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    imageKey VARCHAR(255),
+    createdAt TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 select * from churches;
 select * from users;
+select * from posts;

@@ -41,6 +41,18 @@ select * from users;
 insert into  users (name, email, phone, role) values ('Jefry Agustin astacio Sanchez','astaciosanchezjefryagustin@gmail.com','829-441-9998','admin');
 select * from users;
 
+-- Tabla para el historial de imágenes de perfil
+CREATE TABLE IF NOT EXISTS user_profile_image_history (
+    user_profile_image_history_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    profilekey TEXT NOT NULL,
+    uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+
+);
+select * from user_profile_image_history;
+
+drop table user_profile_image_history;
+
 -- User passwords table (separate for security)
 CREATE TABLE IF NOT EXISTS user_passwords (
     password_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

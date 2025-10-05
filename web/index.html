@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subir y Ver Imagen de Perfil</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Imagen de Perfil de Usuario</h1>
+        <div class="profile-section">
+            <img id="profileImage" src="https://via.placeholder.com/150" alt="Imagen de Perfil">
+            <input type="file" id="fileInput" accept="image/*">
+            <button id="uploadButton">Subir Imagen</button>
+        </div>
+        <p>ID de Usuario (para pruebas): <input type="text" id="userIdInput" value="23b039c9-4848-466c-ba16-195d973a96ab"></p>
+        <p id="message" class="hidden"></p>
+    </div>
+    <script src="./script.js"></script>
+</body>
+</html>
