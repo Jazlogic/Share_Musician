@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, Alert, Modal } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@react-navigation/native';
 import BottomNavigationBar from '@/components/BottomNavigationBar';
@@ -23,24 +24,78 @@ interface UserProfile {
   updated_at: Date;
   email_verified?: boolean;
   verification_token?: string | null;
-  profileKey: string | null;
+  profilekey: string | null;
 }
 
 const PerfilScreen = () => {
   const router = useRouter();
-  const { user, loading, error, getProfileImageUrl, logout } = useUser();
+  const { user, loading, error, getProfileImageUrl, logout, uploadProfileImage } = useUser();
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [isPersonalDetailsExpanded, setIsPersonalDetailsExpanded] = useState<boolean>(false);
+  const [newProfileImage, setNewProfileImage] = useState<string | null>(null);
+  const [showFullScreenImage, setShowFullScreenImage] = useState<boolean>(false);
+  const [fullScreenImageUrl, setFullScreenImageUrl] = useState<string | null>(null);
+  const [isSavingImage, setIsSavingImage] = useState<boolean>(false); // Nuevo estado para el botón de guardar
 
   useEffect(() => {
     const fetchProfileImage = async () => {
-      if (user?.profileKey) {
-        const url = await getProfileImageUrl(user.profileKey);
+      console.log('fetchProfileImage called');
+      console.log('user?.profileKey:', user);
+      if (user?.profilekey) {
+        
+        const url = await getProfileImageUrl(user.profilekey);
+        console.log('url:', url);
         setProfileImageUrl(url);
       }
+      console.log('profileImageUrl:', user?.profilekey);
     };
     fetchProfileImage();
-  }, [user?.profileKey, getProfileImageUrl]);
+  }, [user?.profilekey, getProfileImageUrl]);
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      console.log('result.assets[0].uri:', result.assets[0].uri);
+      setNewProfileImage(result.assets[0].uri);
+    }
+  };
+
+  const handleSaveProfileImage = async () => {
+    if (!newProfileImage) {
+      Alert.alert('Error', 'No se ha seleccionado ninguna imagen nueva.');
+      return;
+    }
+    setIsSavingImage(true); // Iniciar el estado de carga
+    try {
+      const success = await uploadProfileImage(newProfileImage);
+      console.log('success:', success);
+      if (success) {
+        Alert.alert('Éxito', 'Imagen de perfil actualizada correctamente.');
+        setNewProfileImage(null); // Limpiar la previsualización
+      } else {
+        Alert.alert('Error', 'No se pudo actualizar la imagen de perfil.');
+      }
+    } catch (error) {
+      console.error('Error al guardar la imagen de perfil:', error);
+      Alert.alert('Error', 'Ocurrió un error al intentar guardar la imagen.');
+    } finally {
+      setIsSavingImage(false); // Finalizar el estado de carga
+    }
+  };
+
+
+  const handleImagePress = (imageUrl: string | null) => {
+    if (imageUrl) {
+      setFullScreenImageUrl(imageUrl);
+      setShowFullScreenImage(true);
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -50,12 +105,32 @@ const PerfilScreen = () => {
   const renderProfileContent = (currentUser: UserProfile) => (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.profileHeader}>
-        <Image
-          source={profileImageUrl ? { uri: profileImageUrl } : DefaultAvatar}
-          style={styles.profileImage}
-        />
+          <TouchableOpacity onPress={() => handleImagePress(newProfileImage ? newProfileImage : profileImageUrl)}>
+            <Image
+              source={newProfileImage ? { uri: newProfileImage } : (profileImageUrl ? { uri: profileImageUrl } : DefaultAvatar)}
+              style={styles.profileImage}
+            />
+          </TouchableOpacity>
+        <TouchableOpacity onPress={pickImage}>
+          <View style={styles.cameraIconContainer}>
+            <Ionicons name="camera" size={24} color={AppColors.text.white} />
+          </View>
+        </TouchableOpacity>
         <Text style={styles.userName}>{currentUser.name}</Text>
+              {newProfileImage && (
+        <TouchableOpacity
+          style={[styles.logoutButton, { backgroundColor: AppColors.primary.accent }]}
+          onPress={handleSaveProfileImage}
+          disabled={isSavingImage} // Deshabilita el botón durante la carga
+        >
+          <Text style={styles.saveImageButtonText}>
+            {isSavingImage ? 'Guardando...' : 'Guardar Imagen'} {/* Cambia el texto durante la carga */}
+          </Text>
+        </TouchableOpacity>
+      )}
       </View>
+
+
 
       <TouchableOpacity
         style={styles.collapsibleHeader}
@@ -147,6 +222,7 @@ const PerfilScreen = () => {
             <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
           </TouchableOpacity>
         </View>
+        <BottomNavigationBar />
       </LinearGradient>
     );
   }
@@ -174,6 +250,26 @@ const PerfilScreen = () => {
     >
       {renderProfileContent(user)}
       <BottomNavigationBar />
+
+      {/* Full Screen Image Modal */}
+      <Modal
+        visible={showFullScreenImage}
+        transparent={true}
+        onRequestClose={() => setShowFullScreenImage(false)}
+      >
+        <View style={styles.fullScreenImageContainer}>
+          <TouchableOpacity style={styles.closeButton} onPress={() => setShowFullScreenImage(false)}>
+            <Ionicons name="close-circle" size={30} color={AppColors.text.white} />
+          </TouchableOpacity>
+          {fullScreenImageUrl && (
+            <Image
+              source={{ uri: fullScreenImageUrl }}
+              style={styles.fullScreenImage}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
     </LinearGradient>
   );
 };
@@ -187,6 +283,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 20,
     paddingBottom: 150, // Añadido para dejar espacio a la BottomNavigationBar
+    marginTop: 40,
   },
   centeredContainer: {
     flex: 1,
@@ -267,6 +364,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  saveImageButtonText: {
+    color: AppColors.text.white,
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
   noUserText: {
     fontSize: 20,
     color: AppColors.text.white,
@@ -318,6 +420,32 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 20,
     marginBottom: 10,
+  },
+  cameraIconContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: AppColors.primary.accent,
+    borderRadius: 20,
+    padding: 2,
+    borderWidth: 1,
+    borderColor: AppColors.neutral.white,
+  },
+  fullScreenImageContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '80%',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 1,
   },
 });
 

@@ -1,6 +1,8 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback, useMemo } from 'react';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from '../../services/api';
+import { api, MessageResponse } from '../../services/api';
+import * as FileSystem from 'expo-file-system/legacy';
 
 interface User {
   user_id: string;
@@ -15,7 +17,7 @@ interface User {
   updated_at: Date;
   email_verified?: boolean;
   verification_token?: string | null;
-  profileKey: string | null;
+  profilekey: string | null;
 }
 
 interface UserContextType {
@@ -25,6 +27,7 @@ interface UserContextType {
   fetchUser: (userId: string) => Promise<void>;
   updateUserProfile: (updatedUser: Partial<User>) => Promise<void>;
   getProfileImageUrl: (profileKey: string) => Promise<string | null>;
+  uploadProfileImage: (imageUri: string) => Promise<boolean>;
   logout: () => Promise<void>;
 }
 
@@ -92,21 +95,82 @@ export const UserProvider = ({ children }: UserProviderProps) => {
 
   const getProfileImageUrl = async (profileKey: string): Promise<string | null> => {
     try {
-      const userToken = await AsyncStorage.getItem('userToken');
-      if (!userToken) {
-        throw new Error('No authentication token found.');
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        console.error('No user token found');
+        return null;
       }
-      const response = await api.get<{ downloadURL: string }>(`/storage/download-url?key=${profileKey}`, {
+      console.log('Intentando obtener URL de descarga para profileKey:', profileKey);
+      const encodedProfileKey = encodeURIComponent(profileKey);
+      console.log('Encoded profileKey:', encodedProfileKey);
+      const url = `/users/profile-image/${encodedProfileKey}`;
+      console.log('URL de solicitud:', url);
+      const response = await api.get<{ downloadURL: string }>(url, {
         headers: {
-          Authorization: `Bearer ${userToken}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       return response.data.downloadURL;
-    } catch (err: any) {
-      console.error('Error fetching profile image URL:', err);
+    } catch (error) {
+      console.error('Error fetching profile image URL:', error);
       return null;
     }
   };
+
+  const uploadProfileImage = useCallback(async (imageUri: string): Promise<boolean> => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token || !user?.user_id) {
+        console.error('No user token or userId found');
+        return false;
+      }
+
+      if (Platform.OS !== 'web') {
+        const fileInfo = await FileSystem.getInfoAsync(imageUri);
+        console.log('File info:', fileInfo);
+        if (!fileInfo.exists) {
+          console.error('File does not exist at URI:', imageUri);
+          return false;
+        }
+      }
+
+      const formData = new FormData();
+
+      if (Platform.OS === 'web') {
+        console.log('Image URI for web:', imageUri);
+        const response = await fetch(imageUri);
+        const blob = await response.blob();
+        console.log('Blob size for web:', blob.size);
+        formData.append('profileImage', blob, `profile-${user.user_id}.jpg`);
+      } else {
+        formData.append('profileImage', {
+          uri: imageUri,
+          name: `profile-${user.user_id}.jpg`,
+          type: 'image/jpeg',
+        } as any);
+      }
+      const response = await api.upload<MessageResponse>(
+        `/users/${user.user_id}/profile-image`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      console.log('Respuesta de la subida de imagen:', response);
+
+      if (response.data.profilekey) {
+        // Actualizar el usuario en el contexto con la nueva profileKey
+        setUser(prevUser => prevUser ? { ...prevUser, profilekey: response.data.profilekey ?? null } : null);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error uploading profile image:', error);
+      return false;
+    }
+  }, [user?.user_id]);
 
   const logout = async () => {
     try {
@@ -132,8 +196,13 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     loadUser();
   }, []);
 
+  const contextValue = useMemo(
+    () => ({ user, loading, error, fetchUser, updateUserProfile, getProfileImageUrl, uploadProfileImage, logout }),
+    [user, loading, error, fetchUser, updateUserProfile, getProfileImageUrl, uploadProfileImage, logout]
+  );
+
   return (
-    <UserContext.Provider value={{ user, loading, error, fetchUser, updateUserProfile, getProfileImageUrl, logout }}>
+    <UserContext.Provider value={contextValue}>
       {children}
     </UserContext.Provider>
   );
