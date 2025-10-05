@@ -4,15 +4,25 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const s3Client = new S3Client({
-  region: process.env.IDRIVE_REGION as string,
-  endpoint: process.env.IDRIVE_ENDPOINT as string,
-  credentials: {
-    accessKeyId: process.env.IDRIVE_ACCESS_KEY_ID as string,
-    secretAccessKey: process.env.IDRIVE_SECRET_ACCESS_KEY as string,
-  },
-  forcePathStyle: true,
-});
+export const getS3Client = (config?: {
+  region?: string;
+  endpoint?: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  forcePathStyle?: boolean;
+}) => {
+  return new S3Client({
+    region: config?.region || process.env.IDRIVE_REGION as string,
+    endpoint: config?.endpoint || process.env.IDRIVE_ENDPOINT as string,
+    credentials: {
+      accessKeyId: config?.accessKeyId || process.env.IDRIVE_ACCESS_KEY_ID as string,
+      secretAccessKey: config?.secretAccessKey || process.env.IDRIVE_SECRET_ACCESS_KEY as string,
+    },
+    forcePathStyle: config?.forcePathStyle || true,
+  });
+};
+
+const s3Client = getS3Client();
 
 const BUCKET_NAME = process.env.IDRIVE_BUCKET_NAME as string;
 console.log('BUCKET_NAME en storageService:', BUCKET_NAME);

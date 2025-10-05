@@ -1,8 +1,8 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback, useMemo } from 'react';
-import { Platform } from 'react-native';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api, MessageResponse } from '../../services/api';
 import * as FileSystem from 'expo-file-system/legacy';
+import { api, BASE_URL } from '../services/api';
 
 interface User {
   user_id: string;
@@ -20,6 +20,11 @@ interface User {
   profilekey: string | null;
 }
 
+interface MessageResponse {
+  message: string;
+  profilekey?: string;
+}
+
 interface UserContextType {
   user: User | null;
   loading: boolean;
@@ -28,6 +33,8 @@ interface UserContextType {
   updateUserProfile: (updatedUser: Partial<User>) => Promise<void>;
   getProfileImageUrl: (profileKey: string) => Promise<string | null>;
   uploadProfileImage: (imageUri: string) => Promise<boolean>;
+  getProfileImageHistory: (userId: string) => Promise<{ profileKey: string; url: string; uploadedAt: string; }[] | null>;
+  selectProfileImageFromHistory: (userId: string, profileKey: string) => Promise<boolean>;
   logout: () => Promise<void>;
 }
 
@@ -103,14 +110,8 @@ export const UserProvider = ({ children }: UserProviderProps) => {
       console.log('Intentando obtener URL de descarga para profileKey:', profileKey);
       const encodedProfileKey = encodeURIComponent(profileKey);
       console.log('Encoded profileKey:', encodedProfileKey);
-      const url = `/users/profile-image/${encodedProfileKey}`;
-      console.log('URL de solicitud:', url);
-      const response = await api.get<{ downloadURL: string }>(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      return response.data.downloadURL;
+      const url = `${BASE_URL}/users/profile-image-proxy/${encodedProfileKey}`;
+      return url;
     } catch (error) {
       console.error('Error fetching profile image URL:', error);
       return null;
@@ -172,6 +173,55 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     }
   }, [user?.user_id]);
 
+  const getProfileImageHistory = useCallback(async (userId: string) => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        console.error('No user token found');
+        return null;
+      }
+
+      const response = await api.get<{ profileKey: string; url: string; uploadedAt: string; }[]>(`/users/${userId}/profile-image-history`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching profile image history:', error);
+      return null;
+    }
+  }, []);
+
+  const selectProfileImageFromHistory = useCallback(async (userId: string, profileKey: string) => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        console.error('No user token found');
+        Alert.alert('Error', 'No se pudo autenticar para seleccionar la imagen de perfil.');
+        return false;
+      }
+
+      const response = await api.post(`/users/${userId}/profile-image-history/select`, { profileKey }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.status === 200) {
+        // Actualizar el perfil del usuario en el contexto si la selección fue exitosa
+        if (user) {
+          setUser(prevUser => prevUser ? { ...prevUser, profilekey: profileKey } : null);
+        }
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error selecting profile image from history:', error);
+      Alert.alert('Error', 'No se pudo seleccionar la imagen de perfil del historial.');
+      return false;
+    }
+  }, [user]);
+
   const logout = async () => {
     try {
       await AsyncStorage.removeItem('userId');
@@ -196,10 +246,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     loadUser();
   }, []);
 
-  const contextValue = useMemo(
-    () => ({ user, loading, error, fetchUser, updateUserProfile, getProfileImageUrl, uploadProfileImage, logout }),
-    [user, loading, error, fetchUser, updateUserProfile, getProfileImageUrl, uploadProfileImage, logout]
-  );
+  const contextValue = { user, loading, error, fetchUser, updateUserProfile, getProfileImageUrl, uploadProfileImage, getProfileImageHistory, selectProfileImageFromHistory, logout };
 
   return (
     <UserContext.Provider value={contextValue}>

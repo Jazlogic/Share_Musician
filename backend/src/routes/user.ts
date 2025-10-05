@@ -10,6 +10,9 @@ import {
   updateProfileKeyController,
   uploadProfileImageController,
   getProfileImageController,
+  getProfileImageHistoryController,
+  selectProfileImageFromHistoryController,
+  serveProfileImage,
 } from '../controllers/userController';
 import { authenticateToken } from '../middleware/authMiddleware';
 import multer from 'multer';
@@ -190,6 +193,7 @@ router.put('/:id', authenticateToken, updateUserController);
  *         description: Error del servidor.
  */
 router.post('/:id/profile-image', authenticateToken, upload.single('profileImage'), (err: any, req: Request, res: Response, next: NextFunction) => {
+  
   if (err instanceof MulterError) {
     console.error('Multer Error:', err);
     return res.status(400).json({ message: err.message });
@@ -338,5 +342,101 @@ router.post('/verify-email', verifyEmailController);
  *         description: Error del servidor.
  */
 router.get('/profile-image/:profilekey', authenticateToken, getProfileImageController);
+router.get('/profile-image-proxy/:profilekey', authenticateToken, serveProfileImage);
+
+/**
+ * @swagger
+ * /users/{id}/profile-image-history:
+ *   get:
+ *     summary: Obtiene el historial de URLs de imágenes de perfil para un usuario.
+ *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: El ID del usuario.
+ *     responses:
+ *       200:
+ *         description: Historial de imágenes de perfil obtenido correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   profileKey:
+ *                     type: string
+ *                     description: La clave de la imagen de perfil.
+ *                   url:
+ *                     type: string
+ *                     description: La URL firmada para descargar la imagen de perfil.
+ *                   uploadedAt:
+ *                     type: string
+ *                     format: date-time
+ *                     description: Fecha y hora de subida de la imagen.
+ *       401:
+ *         description: No autorizado.
+ *       404:
+ *         description: No se encontró historial de imágenes de perfil para este usuario.
+ *       500:
+ *         description: Error del servidor.
+ */
+router.get('/:id/profile-image-history', authenticateToken, getProfileImageHistoryController);
+
+/**
+ * @swagger
+ * /users/{id}/profile-image-history/select:
+ *   post:
+ *     summary: Permite al usuario seleccionar una imagen de perfil histórica como su foto de perfil actual.
+ *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: El ID del usuario.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               profileKey:
+ *                 type: string
+ *                 description: La clave de la imagen de perfil histórica a seleccionar.
+ *             required:
+ *               - profileKey
+ *     responses:
+ *       200:
+ *         description: Foto de perfil actualizada correctamente desde el historial.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Foto de perfil actualizada correctamente desde el historial.
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Solicitud inválida o profileKey no proporcionada.
+ *       401:
+ *         description: No autorizado.
+ *       404:
+ *         description: Usuario no encontrado o la profileKey no se encontró en el historial.
+ *       500:
+ *         description: Error del servidor.
+ */
+router.post('/:id/profile-image-history/select', authenticateToken, selectProfileImageFromHistoryController);
 
 export default router;

@@ -5,10 +5,11 @@ import { useTheme } from '@react-navigation/native';
 import BottomNavigationBar from '@/components/BottomNavigationBar';
 import { Ionicons } from '@expo/vector-icons';
 import { AppColors } from '../theme/colors';
-import { useUser } from './context/UserContext';
+import { useUser } from '../../frontend/context/UserContext';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
-import DefaultAvatar from '@/assets/images/default-avatar.png'
+import DefaultAvatar from '@/assets/images/default-avatar.png';
+import ProfileImageGallery from '@/components/ProfileImageGallery'; // Importar el nuevo componente
 
 
 interface UserProfile {
@@ -36,18 +37,16 @@ const PerfilScreen = () => {
   const [showFullScreenImage, setShowFullScreenImage] = useState<boolean>(false);
   const [fullScreenImageUrl, setFullScreenImageUrl] = useState<string | null>(null);
   const [isSavingImage, setIsSavingImage] = useState<boolean>(false); // Nuevo estado para el botón de guardar
+  const [showGalleryModal, setShowGalleryModal] = useState<boolean>(false); // Estado para controlar la visibilidad del modal de la galería
 
   useEffect(() => {
     const fetchProfileImage = async () => {
-      console.log('fetchProfileImage called');
-      console.log('user?.profileKey:', user);
       if (user?.profilekey) {
         
         const url = await getProfileImageUrl(user.profilekey);
         console.log('url:', url);
         setProfileImageUrl(url);
       }
-      console.log('profileImageUrl:', user?.profilekey);
     };
     fetchProfileImage();
   }, [user?.profilekey, getProfileImageUrl]);
@@ -61,7 +60,6 @@ const PerfilScreen = () => {
     });
 
     if (!result.canceled) {
-      console.log('result.assets[0].uri:', result.assets[0].uri);
       setNewProfileImage(result.assets[0].uri);
     }
   };
@@ -73,6 +71,7 @@ const PerfilScreen = () => {
     }
     setIsSavingImage(true); // Iniciar el estado de carga
     try {
+      console.log('newProfileImage:', newProfileImage);
       const success = await uploadProfileImage(newProfileImage);
       console.log('success:', success);
       if (success) {
@@ -115,6 +114,9 @@ const PerfilScreen = () => {
           <View style={styles.cameraIconContainer}>
             <Ionicons name="camera" size={24} color={AppColors.text.white} />
           </View>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setShowGalleryModal(true)} style={styles.galleryButton}>
+          <Ionicons name="images-outline" size={24} color={AppColors.text.white} />
         </TouchableOpacity>
         <Text style={styles.userName}>{currentUser.name}</Text>
               {newProfileImage && (
@@ -269,6 +271,22 @@ const PerfilScreen = () => {
             />
           )}
         </View>
+      </Modal>
+
+      {/* Profile Image Gallery Modal */}
+      <Modal
+        visible={showGalleryModal}
+        transparent={true}
+        onRequestClose={() => setShowGalleryModal(false)}
+        animationType="slide"
+      >
+        <ProfileImageGallery
+          onClose={() => setShowGalleryModal(false)}
+          onSelectImage={(imageUrl) => {
+            setProfileImageUrl(imageUrl); // Actualizar la imagen de perfil actual
+            setShowGalleryModal(false); // Cerrar la galería
+          }}
+        />
       </Modal>
     </LinearGradient>
   );
@@ -425,6 +443,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
+    backgroundColor: AppColors.primary.accent,
+    borderRadius: 20,
+    padding: 2,
+    borderWidth: 1,
+    borderColor: AppColors.neutral.white,
+  },
+  galleryButton: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
     backgroundColor: AppColors.primary.accent,
     borderRadius: 20,
     padding: 2,
