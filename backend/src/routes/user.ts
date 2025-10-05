@@ -1,4 +1,5 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
+import { MulterError } from 'multer';
 import {
   createUserController,
   getUsersController,
@@ -7,8 +8,22 @@ import {
   deleteUserController,
   verifyEmailController,
   updateProfileKeyController,
+  uploadProfileImageController,
+  getProfileImageController,
 } from '../controllers/userController';
 import { authenticateToken } from '../middleware/authMiddleware';
+import multer from 'multer';
+
+// Configuración de Multer para manejar la subida de archivos en memoria
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// Extender la interfaz Request de Express para incluir la propiedad file
+declare module 'express' {
+  export interface Request {
+    file?: Express.Multer.File;
+  }
+}
 
 const router = Router();
 
@@ -127,6 +142,66 @@ router.put('/:id', authenticateToken, updateUserController);
 
 /**
  * @swagger
+ * /users/{id}/profile-image:
+ *   post:
+ *     summary: Sube una imagen de perfil para un usuario y actualiza su profileKey.
+ *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: El ID del usuario.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               profileImage:
+ *                 type: string
+ *                 format: binary
+ *                 description: El archivo de imagen de perfil a subir.
+ *     responses:
+ *       200:
+ *         description: Imagen de perfil subida y profileKey actualizada correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Imagen de perfil subida y actualizada correctamente.
+ *                 profileKey:
+ *                   type: string
+ *                   description: La nueva clave de la foto de perfil.
+ *       400:
+ *         description: Solicitud inválida o no se proporcionó ningún archivo.
+ *       401:
+ *         description: No autorizado.
+ *       404:
+ *         description: El usuario no fue encontrado o no se pudo actualizar la profileKey.
+ *       500:
+ *         description: Error del servidor.
+ */
+router.post('/:id/profile-image', authenticateToken, upload.single('profileImage'), (err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err instanceof MulterError) {
+    console.error('Multer Error:', err);
+    return res.status(400).json({ message: err.message });
+  } else if (err) {
+    console.error('Unknown File Upload Error:', err);
+    return res.status(500).json({ message: 'An unknown error occurred during file upload.' });
+  }
+  next();
+}, uploadProfileImageController);
+
+/**
+ * @swagger
  * /users/{id}/profile:
  *   put:
  *     summary: Actualiza la clave de la foto de perfil de un usuario por id.
@@ -228,5 +303,40 @@ router.delete('/:id', authenticateToken, deleteUserController);
  *         description: Some server error
  */
 router.post('/verify-email', verifyEmailController);
+
+/**
+ * @swagger
+ * /users/profile-image/{profileKey}:
+ *   get:
+ *     summary: Obtiene la URL de descarga de una imagen de perfil.
+ *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: profileKey
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: La clave de la imagen de perfil en el bucket de iDrive e2.
+ *     responses:
+ *       200:
+ *         description: URL de descarga de la imagen de perfil obtenida correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 downloadURL:
+ *                   type: string
+ *                   description: La URL firmada para descargar la imagen de perfil.
+ *       400:
+ *         description: Solicitud inválida o profileKey no proporcionada.
+ *       401:
+ *         description: No autorizado.
+ *       500:
+ *         description: Error del servidor.
+ */
+router.get('/profile-image/:profilekey', authenticateToken, getProfileImageController);
 
 export default router;

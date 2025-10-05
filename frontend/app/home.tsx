@@ -31,7 +31,8 @@ export default function HomeScreen() {
       end={{ x: 1, y: 1 }}
     >
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <Text style={styles.welcomeText}>¡Bienvenido, {userName}!</Text>
+        <Text style={styles.welcomeText}>¡Bienvenido!</Text>
+        <Text style={styles.welcomeTextName}>{userName.split(' ')[0]}</Text>
 
         <Text style={styles.sectionTitle}>Tus Listas de Reproducción</Text>
         <View style={styles.playlistsContainer}>
@@ -98,7 +99,14 @@ const styles = StyleSheet.create({
     paddingBottom: 100, // Space for bottom navigation
   },
   welcomeText: {
-    fontSize: 28,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 0,
+    textAlign: 'center',
+  },
+  welcomeTextName: {
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 30,

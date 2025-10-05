@@ -15,6 +15,7 @@ const s3Client = new S3Client({
 });
 
 const BUCKET_NAME = process.env.IDRIVE_BUCKET_NAME as string;
+console.log('BUCKET_NAME en storageService:', BUCKET_NAME);
 
 export const storageService = {
   async getUploadUrl(key: string, fileType: string) {
@@ -28,6 +29,7 @@ export const storageService = {
   },
 
   async getDownloadUrl(key: string) {
+    console.log('Intentando obtener URL de descarga para key:', key, 'en bucket:', BUCKET_NAME);
     const command = new GetObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,

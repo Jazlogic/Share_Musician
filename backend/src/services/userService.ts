@@ -27,7 +27,7 @@ export const createUser = async (userData: User, password: string): Promise<User
     const hashedPassword = await bcrypt.hash(password, 10);
     const verificationToken = uuidv4(); // Generate a unique verification token
 
-    const { name, email, phone, role = 'musician', active_role = 'musician', status = 'pending', church_id = null, profileKey = null } = userData;
+    const { name, email, phone, role = 'musician', active_role = 'musician', status = 'pending', church_id = null, profileKey: profileKey = null } = userData;
 
     const userRes = await client.query(
       'INSERT INTO users (name, email, phone, role, active_role, status, church_id, email_verified, verification_token, profileKey) VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE, $8, $9) RETURNING *'
@@ -68,7 +68,7 @@ export const updateUser = async (id: string, userData: Partial<User>): Promise<U
   try {
     await client.query('BEGIN');
 
-    const { name, email, phone, role, active_role, status, church_id, email_verified, verification_token, profileKey } = userData;
+    const { name, email, phone, role, active_role, status, church_id, email_verified, verification_token, profileKey: profileKey } = userData;
     const fields: string[] = [];
     const values: any[] = [];
     let paramIndex = 1;
