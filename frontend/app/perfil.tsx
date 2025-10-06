@@ -175,6 +175,7 @@ const PerfilScreen = () => {
             <Text style={styles.detailValue}>{currentUser.email}</Text>
           </View>
           {currentUser.church_id && (
+            // Hay que implementar la logica para que aparezca el nombre de la iglesia.
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>ID de Iglesia:</Text>
               <Text style={styles.detailValue}>{currentUser.church_id}</Text>
