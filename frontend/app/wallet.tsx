@@ -101,6 +101,7 @@ export default function WalletScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    marginTop: 30,
   },
   scrollViewContent: {
     padding: 16,
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 5,
-    elevation: 8,
+    // elevation: 8,
   },
   balanceTitle: {
     fontSize: 18,
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 3,
-    elevation: 3,
+    // elevation: 3,
   },
   paymentMethodText: {
     fontSize: 16,
@@ -179,8 +180,8 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowRadius: 1,
+    // elevation: 3,
   },
   transactionDescription: {
     fontSize: 16,
