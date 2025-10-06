@@ -126,7 +126,6 @@ export default function SolicitudesScreen() {
           },
         });
         setRequests(response.data);
-        console.log("Fetched requests:", response.data);
       } catch (err: any) {
         setError(err.message || "Failed to fetch requests.");
       } finally {
@@ -197,15 +196,15 @@ export default function SolicitudesScreen() {
                    end={{ x: 0, y: 0 }}
                  >
                   <View style={[styles.cardHeader]}>
-                    <View style={[styles.detailCard, { backgroundColor: secondaryCardsRequestBackgroundColor , borderColor: borderColor}]}>
-                      <Text style={[styles.requestTitle, { color: textColor }]}>{item.title}.</Text>
                     <View style={[styles.statusBadge, { backgroundColor: item.status === 'pending' ? AppColors.status.pending : (item.status === 'completed' ? AppColors.status.completed : AppColors.status.default) }]}>
                       <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
                     </View>
+                    <View style={[styles.detailCard, { backgroundColor: secondaryCardsRequestBackgroundColor , borderColor: borderColor}]}>
+                      <Text style={[styles.requestTitle, { color: textColor }]}>{item.title}.</Text>
                     </View>
                   </View>
                   <View style={[styles.detailCard, { backgroundColor: secondaryCardsRequestBackgroundColor , borderColor: borderColor}]}>
-                   <FontAwesome name="money" size={30} color={AppColors.status.completed} style={styles.detailIcon} />
+                   <FontAwesome name="money" size={20} color={AppColors.status.completed} style={styles.detailIcon} />
                   <Text style={[styles.requestPrice, { color: AppColors.status.completed }]}>RD$ {item.price}</Text>
                   </View>
                   {isExpanded && (
@@ -285,7 +284,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    // marginBottom: 5,
   },
   statusBadge: {
     borderRadius: 20,
@@ -295,10 +294,10 @@ const styles = StyleSheet.create({
   statusText: {
     color: 'white',
     fontWeight: 'bold',
-    fontSize: 13,
+    fontSize: 8,
   },
   requestTitle: {
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   requestRefClient: {
@@ -307,37 +306,34 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   requestPrice: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
     marginTop: 10,
-    // marginBottom: 15,
   },
   detailRow: {
-    marginBottom: 12,
+    marginBottom: 10,
   },
   requestDetailLabel: {
     fontSize: 15,
     fontWeight: 'bold',
-    // marginBottom: 4,
   },
   requestDetail: {
     fontSize: 15,
   },
   detailsContainer: {
-    marginTop: 10,
+    // marginTop: 4,
   },
   detailCard: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 10,
     padding: 15,
-    marginBottom: 8,
+    marginBottom: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     borderBottomWidth: 1,
-    // elevation: 2,
   },
   detailIcon: {
     marginRight: 10,
