@@ -225,11 +225,11 @@ export const requestPasswordReset = async (email: string): Promise<void> => {
       throw new Error('Usuario no encontrado');
     }
 
-    const resetToken = uuidv4();
+    const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
     const resetTokenExpires = new Date(Date.now() + 3600000); // 1 hora de validez
 
     await client.query(
-      'UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE user_id = $3',
+      'UPDATE users SET reset_password_token = $1, reset_password_expires_at = $2 WHERE user_id = $3',
       [resetToken, resetTokenExpires, user.user_id]
     );
 
@@ -252,7 +252,7 @@ export const resetPassword = async (token: string, newPassword: string): Promise
     await client.query('BEGIN');
 
     const userResult = await client.query(
-      'SELECT user_id, reset_password_expires FROM users WHERE reset_password_token = $1',
+      'SELECT user_id, reset_password_expires_at FROM users WHERE reset_password_token = $1',
       [token]
     );
     const user = userResult.rows[0];
@@ -275,7 +275,7 @@ export const resetPassword = async (token: string, newPassword: string): Promise
 
     // Limpiar el token de restablecimiento de contraseña
     await client.query(
-      'UPDATE users SET reset_password_token = NULL, reset_password_expires = NULL WHERE user_id = $1',
+      'UPDATE users SET reset_password_token = NULL, reset_password_expires_at = NULL WHERE user_id = $1',
       [user.user_id]
     );
 

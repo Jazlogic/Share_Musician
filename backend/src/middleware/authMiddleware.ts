@@ -4,8 +4,10 @@ import jwt from 'jsonwebtoken';
 declare global {
   namespace Express {
     interface Request {
-      userId?: string;
-      userRole?: string;
+      user?: {
+        userId: string;
+        role: string;
+      };
     }
   }
 }
@@ -22,8 +24,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     if (err) {
       return res.status(403).json({ message: 'No autorizado: Token inválido' });
     }
-    req.userId = user.userId;
-    req.userRole = user.role;
+    req.user = { userId: user.userId, role: user.role };
     next();
   });
 };

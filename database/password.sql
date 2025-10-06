@@ -1,7 +1,7 @@
 -- User passwords table (separate for security)
 CREATE TABLE IF NOT EXISTS user_passwords (
     password_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     password VARCHAR(255) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
