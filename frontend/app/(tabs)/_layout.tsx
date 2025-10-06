@@ -28,9 +28,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="solicitudes"
         options={{
-          title: 'Explore',
+          title: 'Solicitudes',
           tabBarIcon: ({ color }) => <IconSymbol size={28} source={DashboardIcon} color={color} />,
         }}
       />

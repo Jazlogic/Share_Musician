@@ -67,8 +67,8 @@ export const AppColors = {
   },
   // Colores de los ítems de las cards
   items:{
-    backgroundLight: 'rgba(215, 228, 255, 0.82)',
-    backgroundDark: 'rgba(80, 131, 197, 0.39)',
+    backgroundLight: 'rgba(234, 239, 249, 0.82)',
+    backgroundDark: 'rgba(255, 255, 255, 0.1)',
     borderTopLight: 'rgba(238, 238, 238, 1)',
     borderBottomDark: 'rgba(51, 51, 51, 1)',
     borderLight: 'rgb(3, 179, 255)',
@@ -91,5 +91,20 @@ export const AppColors = {
     incomeDark: 'rgba(46, 204, 113, 1)',
     expenseLight: 'rgba(231, 76, 60, 1)',
     expenseDark: 'rgba(231, 76, 60, 1)',
+  },
+  status: {
+    pending: 'rgba(230, 126, 34, 1)', // Naranja para estado pendiente
+    completed: 'rgba(46, 204, 113, 1)', // Verde para estado completado
+    default: 'rgba(155, 161, 166, 1)', // Gris medio para estado por defecto
+  },
+  cardsRequest: {
+    backgroundLight: 'rgba(234, 239, 249, 0.82)',
+    backgroundDark: 'rgba(255, 255, 255, 0.1)',
+    borderTopLight: 'rgba(238, 238, 238, 1)',
+    borderBottomDark: 'rgba(51, 51, 51, 1)',
+    borderLight: 'rgb(3, 179, 255)',
+    borderDark: 'rgb(90, 145, 255)',
+    textDark: 'rgba(236, 237, 238, 1)',
+    textLight: 'rgba(17, 24, 28, 1)',
   },
 };

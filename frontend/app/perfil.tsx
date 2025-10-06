@@ -26,6 +26,7 @@ interface UserProfile {
   email_verified?: boolean;
   verification_token?: string | null;
   profilekey: string | null;
+
 }
 
 const PerfilScreen = () => {
@@ -41,6 +42,7 @@ const PerfilScreen = () => {
 
   useEffect(() => {
     const fetchProfileImage = async () => {
+      // console.log('user:', user);
       if (user?.profilekey) {
         
         const url = await getProfileImageUrl(user.profilekey);

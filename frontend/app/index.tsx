@@ -5,12 +5,14 @@ import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, MessageResponse } from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
+import { useUser } from '../context/UserContext';
 
 export default function WelcomeScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const { refreshUser } = useUser();
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -39,6 +41,7 @@ export default function WelcomeScreen() {
           await AsyncStorage.setItem('userToken', response.data.token);
           console.log('Stored userToken:', response.data.token);
         }
+         await refreshUser();
         router.replace('/home');
       } else {
         Alert.alert('Error', response.data.message || 'Login failed');
