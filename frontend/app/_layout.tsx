@@ -39,6 +39,7 @@ export default function RootLayout() {
               <Stack.Screen name="agenda" options={{ headerShown: false }} />
               <Stack.Screen name="perfil" options={{ headerShown: false }} />
               <Stack.Screen name="pagos" options={{ headerShown: false }} />
+              <Stack.Screen name="create-request" options={{ headerShown: false }} />
               <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
             </Stack>
           </UserProvider>
