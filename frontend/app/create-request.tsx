@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Platform, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeColor } from '../hooks/use-theme-color';
 import { FontAwesome } from '@expo/vector-icons';
 import BottomNavigationBar from '../components/BottomNavigationBar';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
+import { api, ApiResponse, MessageResponse } from '../services/api';
+import { useUser } from '../context/UserContext';
+import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 LocaleConfig.locales['es'] = {
   monthNames: [
@@ -51,9 +55,11 @@ import { AppColors } from '../theme/colors';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function CreateRequestScreen() {
+  const { user } = useUser();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
+  const [instrument, setInstrument] = useState('');
   const [isCategoryModalVisible, setCategoryModalVisible] = useState(false);
   const eventTypes = [
     'Culto Nocturno',
@@ -114,9 +120,61 @@ export default function CreateRequestScreen() {
   const submitButtonTextColor = useThemeColor({ light: AppColors.button.textLight, dark: AppColors.button.textDark }, 'text');
   const errorTextColor = useThemeColor({ light: AppColors.secondary.red, dark: AppColors.secondary.red }, 'text');
 
-  const handleSubmit = () => {
-    // Lógica para enviar la solicitud
-    console.log({ title, description, category, eventDate, startTime, endTime, price });
+  const handleSubmit = async () => {
+    if (!user || !user.user_id) {
+      Alert.alert('Error', 'Usuario no autenticado. Por favor, inicie sesión.');
+      return;
+    }
+
+    if (!title || !description || !eventDate || !startTime || !endTime) {
+      Alert.alert('Error', 'Por favor, complete todos los campos obligatorios.');
+      return;
+    }
+
+    if (timeError) {
+      Alert.alert('Error', timeError);
+      return;
+    }
+
+    const formattedStartTime = startTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const formattedEndTime = endTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    const requestData = {
+      client_id: user.user_id,
+      title,
+      description,
+      category: category || undefined,
+      instrument: instrument || undefined,
+      event_date: eventDate,
+      start_time: formattedStartTime,
+      end_time: formattedEndTime,
+      price: parseFloat(price),
+      // Otros campos opcionales si los agregas a la UI
+    };
+
+    try {
+      const userToken = await AsyncStorage.getItem('userToken');
+      if (!userToken) {
+        Alert.alert('Error', 'No se encontró token de autenticación.');
+        return;
+      }
+
+      const response: ApiResponse<MessageResponse> = await api.post('/requests', requestData, {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+        },
+      });
+
+      if (response.status === 201) {
+        Alert.alert('Éxito', 'Solicitud creada correctamente.');
+        router.push('/dashboard'); // Navegar a la pantalla de dashboard o solicitudes
+      } else {
+        Alert.alert('Error', response.data.message || 'Error al crear la solicitud.');
+      }
+    } catch (error: any) {
+      console.error('Error creating request:', error);
+      Alert.alert('Error', error.message || 'Error de red o servidor.');
+    }
   };
 
   const onDayPress = (day: any) => {
@@ -242,7 +300,7 @@ export default function CreateRequestScreen() {
             <FontAwesome name="pencil" size={20} color={tintColor} style={styles.inputIcon} />
             <TextInput
               style={[dynamicStyles.input, { color: textColor, borderColor: tintColor }]}
-              placeholder="Title"
+              placeholder="Titulo de la solicitud"
               placeholderTextColor={tintColor}
               value={title}
               onChangeText={setTitle}
@@ -253,7 +311,7 @@ export default function CreateRequestScreen() {
             <FontAwesome name="pencil" size={20} color={tintColor} style={styles.inputIcon} />
             <TextInput
               style={[dynamicStyles.input, { color: textColor, borderColor: tintColor }]}
-              placeholder="Description"
+              placeholder="Descripcion de la solicitud"
               placeholderTextColor={tintColor}
               value={description}
               onChangeText={setDescription}
@@ -267,6 +325,18 @@ export default function CreateRequestScreen() {
                 {category ? category : "Seleccionar Categoría"}
               </Text>
             </TouchableOpacity>
+          </View>
+
+          {/* Instrumento */}
+          <View style={styles.inputGroup}>
+            <FontAwesome name="music" size={20} color={tintColor} style={styles.inputIcon} />
+            <TextInput
+              style={[dynamicStyles.input, { color: textColor, borderColor: tintColor }]}
+              placeholder="Instrumento (ej. Guitarra, Piano)"
+              placeholderTextColor={tintColor}
+              value={instrument}
+              onChangeText={setInstrument}
+            />
           </View>
 
           {/* Modal para seleccionar categoría */}
@@ -392,7 +462,7 @@ export default function CreateRequestScreen() {
           </View>
 
           <TouchableOpacity style={[dynamicStyles.submitButton, { backgroundColor: submitButtonBackgroundColor }]} onPress={handleSubmit}>
-            <Text style={[dynamicStyles.submitButtonText, { color: submitButtonTextColor }]}>SUBMIT REQUEST</Text>
+            <Text style={[dynamicStyles.submitButtonText, { color: submitButtonTextColor }]}>Crear Solicitud</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

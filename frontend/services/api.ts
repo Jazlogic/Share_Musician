@@ -1,6 +1,6 @@
 // const BASE_URL = 'http://localhost:3001';
-// const BASE_URL:string = 'http://172.20.10.5:3001';
-export const BASE_URL = 'http://192.168.56.130:3001';
+const BASE_URL:string = 'http://172.20.10.5:3001';
+// export const BASE_URL = 'http://192.168.56.130:3001';
 // export const BASE_URL = 'http://192.168.100.101:3001';
 
 interface RequestOptions extends RequestInit {

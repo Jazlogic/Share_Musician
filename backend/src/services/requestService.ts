@@ -13,6 +13,7 @@ interface RequestData {
   title: string;
   description: string;
   category?: string;
+  instrument?: string;
   location?: object;
   event_date: string;
   start_time: string;
@@ -39,6 +40,7 @@ export const createRequest = async (requestData: RequestData) => {
     title,
     description,
     category,
+    instrument,
     location,
     event_date,
     start_time,
@@ -65,6 +67,7 @@ export const createRequest = async (requestData: RequestData) => {
       title,
       description,
       category,
+      instrument,
       location,
       event_date,
       start_time,
@@ -83,7 +86,7 @@ export const createRequest = async (requestData: RequestData) => {
       is_public,
       reopened_from_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
     ) RETURNING *;
   `;
 
@@ -93,6 +96,7 @@ export const createRequest = async (requestData: RequestData) => {
     title,
     description,
     category || null,
+    instrument || null,
     location ? JSON.stringify(location) : null,
     event_date,
     start_time,

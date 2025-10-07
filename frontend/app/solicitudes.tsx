@@ -141,17 +141,21 @@ export default function SolicitudesScreen() {
   };
 
   if (loading) {
+  // if (loading) {
     return (
-      <LinearGradient
-        colors={[gradientStart, gradientEnd]}
-        style={styles.container}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <ActivityIndicator size="large" color={AppColors.text.light} />
-        <Text style={{ color: AppColors.text.light, marginTop: 10 }}>
-          Cargando solicitudes...
-        </Text>
+    <LinearGradient
+      colors={[gradientStart, gradientEnd]}
+      style={{ flex: 1 }}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+
+
+          <View style={[styles.container,{borderRadius: 10}]}>
+                <Text style={{ color: textColor, fontSize: 26, fontWeight: 'bold' }}>Cargando solicitudes...</Text>
+                <ActivityIndicator size="large" color={textColor} />
+              </View>
+            <BottomNavigationBar/>
       </LinearGradient>
     );
   }
@@ -179,7 +183,11 @@ export default function SolicitudesScreen() {
       <View style={styles.container}>
         <Text style={[styles.title, { color: textColor }]}>Solicitudes Creadas</Text>
         {requests.length === 0 ? (
-          <Text style={{ color: textColor }}>No hay solicitudes creadas.</Text>
+          <View style={[styles.container]}>
+            <View>
+              <Text style={{ color: textColor, fontSize: 26, fontWeight: 'bold' }}>No hay solicitudes creadas.</Text>
+            </View>
+          </View>
         ) : (
           <FlatList
           data={requests}

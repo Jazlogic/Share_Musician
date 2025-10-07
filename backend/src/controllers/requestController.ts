@@ -3,7 +3,7 @@ import { createRequest, getCreatedRequests } from '../services/requestService';
 
 export const createRequestController = async (req: Request, res: Response) => {
   try {
-    const { client_id, title, description, event_date, start_time, end_time, ...optionalFields } = req.body;
+    const { client_id, title, description, event_date, start_time, end_time, instrument, ...optionalFields } = req.body;
 
     // Basic validation
     if (!client_id || !title || !description || !event_date || !start_time || !end_time) {
@@ -17,6 +17,7 @@ export const createRequestController = async (req: Request, res: Response) => {
       event_date,
       start_time,
       end_time,
+      instrument,
       ...optionalFields,
     });
 
