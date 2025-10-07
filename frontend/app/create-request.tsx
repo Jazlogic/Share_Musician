@@ -54,6 +54,17 @@ export default function CreateRequestScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
+  const [isCategoryModalVisible, setCategoryModalVisible] = useState(false);
+  const eventTypes = [
+    'Culto Nocturno',
+    'Culto Diurno',
+    'Retiro',
+    'Congreso',
+    'Campaña',
+    'Concierto',
+    'Boda',
+    'Funeral',
+  ];
   const [eventDate, setEventDate] = useState('');
   const [startTime, setStartTime] = useState(new Date());
   const [endTime, setEndTime] = useState(new Date());
@@ -191,7 +202,28 @@ export default function CreateRequestScreen() {
     timeErrorText: {
       color: errorTextColor,
       marginBottom: 10,
-    }
+    },
+    datePickerButton: {
+      flex: 1,
+      height: 50,
+      borderRadius: 10,
+      paddingHorizontal: 15,
+      justifyContent: 'center',
+      borderWidth: 1,
+    },
+    datePickerButtonText: {
+      fontSize: 16,
+    },
+    categoryItem: {
+      padding: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: '#ccc',
+      width: '100%',
+      alignItems: 'center',
+    },
+    categoryItemText: {
+      fontSize: 18,
+    },
   });
 
   return (
@@ -205,6 +237,7 @@ export default function CreateRequestScreen() {
         </View>
 
         <View style={dynamicStyles.formContainer}>
+          {/* Titulo de la solicitud */}
           <View style={styles.inputGroup}>
             <FontAwesome name="pencil" size={20} color={tintColor} style={styles.inputIcon} />
             <TextInput
@@ -215,7 +248,7 @@ export default function CreateRequestScreen() {
               onChangeText={setTitle}
             />
           </View>
-
+          {/* Descripcion de la solicitud */}
           <View style={styles.inputGroup}>
             <FontAwesome name="pencil" size={20} color={tintColor} style={styles.inputIcon} />
             <TextInput
@@ -226,33 +259,55 @@ export default function CreateRequestScreen() {
               onChangeText={setDescription}
             />
           </View>
-
+          {/* Categoria de la solicitud */}
           <View style={styles.inputGroup}>
             <FontAwesome name="tags" size={20} color={tintColor} style={styles.inputIcon} />
-            <TextInput
-              style={[dynamicStyles.input, { color: textColor, borderColor: tintColor }]}
-              placeholder="Categoria (ej. Musica, Producion)"
-              placeholderTextColor={tintColor}
-              value={category}
-              onChangeText={setCategory}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <FontAwesome name="calendar" size={20} color={tintColor} style={styles.inputIcon} />
-            <TouchableOpacity style={styles.iconButton} onPress={() => setDatePickerVisible(true)}>
-            <TextInput
-              style={[dynamicStyles.input, { color: textColor, borderColor: tintColor }]}
-              placeholder="Fecha del evento"
-              placeholderTextColor={tintColor}
-              value={eventDate}
-              onChangeText={setEventDate}
-              editable={false} // Make the TextInput not editable directly
-            />
-              {/* <FontAwesome name="calendar" size={20} color={tintColor} /> */}
+            <TouchableOpacity style={[dynamicStyles.datePickerButton, { borderColor: tintColor }]} onPress={() => setCategoryModalVisible(true)}>
+              <Text style={[dynamicStyles.datePickerButtonText, { color: textColor }]}>
+                {category ? category : "Seleccionar Categoría"}
+              </Text>
             </TouchableOpacity>
           </View>
 
+          {/* Modal para seleccionar categoría */}
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={isCategoryModalVisible}
+            onRequestClose={() => setCategoryModalVisible(false)}
+          >
+            <View style={styles.centeredView}>
+              <View style={[dynamicStyles.modalView, { backgroundColor: backgroundColor, shadowColor: shadowColor }]}>
+                <ScrollView style={styles.categoryList}>
+                  {eventTypes.map((type, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={dynamicStyles.categoryItem}
+                      onPress={() => {
+                        setCategory(type);
+                        setCategoryModalVisible(false);
+                      }}
+                    >
+                      <Text style={[dynamicStyles.categoryItemText, { color: textColor }]}>{type}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                <TouchableOpacity onPress={() => setCategoryModalVisible(false)} style={[dynamicStyles.closeButton, { backgroundColor: closeButtonBackgroundColor }]}>
+                  <Text style={[dynamicStyles.textStyle, { color: buttonTextColor }]}>Cerrar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+          {/* Fecha del evento */}
+          <View style={styles.inputGroup}>
+            <FontAwesome name="calendar" size={20} color={tintColor} style={styles.inputIcon} />
+            <TouchableOpacity style={[dynamicStyles.datePickerButton, { borderColor: tintColor }]} onPress={() => setDatePickerVisible(true)}>
+              <Text style={[dynamicStyles.datePickerButtonText, { color: textColor }]}>
+                {eventDate ? eventDate : "Seleccionar Fecha"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          {/* Hora del evento */}
           <Modal
             animationType="slide"
             transparent={true}
@@ -291,32 +346,22 @@ export default function CreateRequestScreen() {
               </View>
             </View>
           </Modal>
-
-          <View style={styles.inputGroup}>
-            <FontAwesome name="clock-o" size={20} color={tintColor} />
-            <TouchableOpacity style={styles.iconButton} onPress={() => showTimepickerModal('start')}>
-            {/* <FontAwesome name="clock-o" size={20} color={tintColor} style={styles.inputIcon} /> */}
-            <TextInput
-              style={[styles.input, { color: textColor, borderColor: tintColor }]}
-              placeholder="Hora de inicio (ej. 18:00) = "
-              placeholderTextColor={tintColor}
-              value={startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              editable={false}
-            />
-            </TouchableOpacity>
-          </View>
-
+          {/* Hora de inicio del evento */}
           <View style={styles.inputGroup}>
             <FontAwesome name="clock-o" size={20} color={tintColor} style={styles.inputIcon} />
-            <TextInput
-              style={[styles.input, { color: textColor, borderColor: tintColor }]}
-              placeholder="End Time"
-              placeholderTextColor={tintColor}
-              value={endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              editable={false}
-            />
-            <TouchableOpacity style={styles.iconButton} onPress={() => showTimepickerModal('end')}>
-              <FontAwesome name="clock-o" size={20} color={tintColor} />
+            <TouchableOpacity style={[dynamicStyles.datePickerButton, { borderColor: tintColor }]} onPress={() => showTimepickerModal('start')}>
+              <Text style={[dynamicStyles.datePickerButtonText, { color: textColor }]}>
+                {startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          {/* Hora de fin del evento */}
+          <View style={styles.inputGroup}>
+            <FontAwesome name="clock-o" size={20} color={tintColor} style={styles.inputIcon} />
+            <TouchableOpacity style={[dynamicStyles.datePickerButton, { borderColor: tintColor }]} onPress={() => showTimepickerModal('end')}>
+              <Text style={[dynamicStyles.datePickerButtonText, { color: textColor }]}>
+                {endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -450,5 +495,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     color: AppColors.neutral.white, // Usar color de texto de AppColors
-  }
+  },
+  categoryList: {
+    maxHeight: 200,
+    width: '100%',
+  },
 });

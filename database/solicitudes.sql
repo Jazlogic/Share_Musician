@@ -31,6 +31,18 @@ CREATE TYPE user_type AS ENUM (
   'admin'
 );
 
+CREATE TYPE event_type AS ENUM (
+  'Español' | 'English',
+  'Culto Nocturno' | 'Night Cult',
+  'Culto Diurno' | 'Day Cult',
+  'Retiro' | 'Retreat',
+  'Congreso' | 'Congress',
+  'Campaña' | 'Campaign',
+  'Concierto' | 'Concert',
+  'Boda' | 'Wedding',
+  'Funeral' | 'Funeral'
+);
+
 -- ==============================
 -- TABLA PRINCIPAL: SOLICITUD
 -- ==============================
