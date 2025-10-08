@@ -91,6 +91,17 @@ CREATE TABLE IF NOT EXISTS instruments (
 );
 
 -- ==============================
+-- MUSICIAN TARIFFS (tarifas base por tipo de músico)
+-- ==============================
+CREATE TABLE IF NOT EXISTS musician_tariffs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    category VARCHAR(100) NOT NULL UNIQUE,
+    hourly_rate NUMERIC(12,2) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ==============================
 -- USER INSTRUMENTS (many-to-many with extra info)
 -- ==============================
 CREATE TABLE IF NOT EXISTS user_instruments (
@@ -109,6 +120,11 @@ CREATE INDEX IF NOT EXISTS idx_user_instruments_instrument_id ON user_instrument
 -- ==============================
 -- REQUESTS (solicitudes musicales)
 -- ==============================
+-- Este sistema elimina price_min y price_max, ya que ahora el cálculo es automático.
+-- musician_tariffs define tarifas base por categoría de músico.
+-- Los factores permiten ajustes según experiencia e instrumento.
+-- system_fee es la comisión de la plataforma.
+-- total_price es lo que verá el cliente como coste final del servicio.
 CREATE TABLE IF NOT EXISTS requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   leader_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, -- quien crea la solicitud (puede ser role 'leader' o 'client')
@@ -118,8 +134,13 @@ CREATE TABLE IF NOT EXISTS requests (
   end_time TIME,
   duration INTERVAL, -- duración estimada
   location JSONB NOT NULL, -- { city, address, lat, lng }
-  price_min NUMERIC(12,2),
-  price_max NUMERIC(12,2),
+  base_rate NUMERIC(12,2),
+  duration_hours NUMERIC(6,2),
+  distance_km NUMERIC(8,2),
+  experience_factor NUMERIC(4,2) DEFAULT 1,
+  instrument_factor NUMERIC(4,2) DEFAULT 1,
+  system_fee NUMERIC(12,2),
+  total_price NUMERIC(12,2),
   extra_amount NUMERIC(10,2) DEFAULT 0 CHECK (extra_amount >= 0), -- monto adicional sugerido
   description TEXT,
   is_public BOOLEAN DEFAULT TRUE,
@@ -308,6 +329,55 @@ CREATE TRIGGER trg_musician_availability_updated_at BEFORE UPDATE ON musician_av
 CREATE TRIGGER trg_pricing_config_updated_at BEFORE UPDATE ON pricing_config FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 CREATE TRIGGER trg_user_balances_updated_at BEFORE UPDATE ON user_balances FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 CREATE TRIGGER trg_user_transactions_updated_at BEFORE UPDATE ON user_transactions FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- Function for automatic price calculation
+CREATE OR REPLACE FUNCTION calculate_request_price()
+RETURNS TRIGGER AS $$
+DECLARE
+  base NUMERIC(12,2);
+  hours NUMERIC(6,2);
+  distance NUMERIC(8,2);
+  exp_factor NUMERIC(4,2) := 1;
+  instr_factor NUMERIC(4,2) := 1;
+  fee NUMERIC(12,2);
+  total NUMERIC(12,2);
+BEGIN
+  -- Get base rate
+  SELECT hourly_rate INTO base
+  FROM musician_tariffs
+  WHERE category = NEW.event_type -- Assuming event_type maps to musician_tariffs.category
+  LIMIT 1;
+
+  -- Calculate duration
+  hours := EXTRACT(EPOCH FROM (NEW.end_time - NEW.start_time)) / 3600;
+
+  -- Optional distance
+  distance := COALESCE((NEW.location->>'distance_km')::NUMERIC, 0);
+
+  -- Apply additional factors (these would need to be determined dynamically)
+  -- For now, using default factors
+  total := (base * hours * exp_factor * instr_factor);
+
+  -- Calculate system fee (10% for example)
+  fee := total * 0.10;
+
+  NEW.base_rate := base;
+  NEW.duration_hours := hours;
+  NEW.distance_km := distance;
+  NEW.experience_factor := exp_factor;
+  NEW.instrument_factor := instr_factor;
+  NEW.system_fee := fee;
+  NEW.total_price := total + fee;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger for automatic calculation on insert or update of requests
+CREATE TRIGGER trg_calculate_request_price
+BEFORE INSERT OR UPDATE ON requests
+FOR EACH ROW
+EXECUTE FUNCTION calculate_request_price();
 
 -- Function to calculate event price (returns a single row)
 CREATE OR REPLACE FUNCTION calculate_event_price(
@@ -516,6 +586,15 @@ INSERT INTO instruments (id, name, category) VALUES
 INSERT INTO pricing_config (id, base_hourly_rate, minimum_hours, maximum_hours, platform_commission, service_fee, tax_rate, currency, is_active)
 SELECT gen_random_uuid(), 500.00, 2.00, 12.00, 0.1500, 100.00, 0.1800, 'DOP', TRUE
 WHERE NOT EXISTS (SELECT 1 FROM pricing_config WHERE is_active = TRUE);
+
+-- Default data for musician_tariffs
+INSERT INTO musician_tariffs (category, hourly_rate) VALUES
+    ('Soloist', 500.00),
+    ('Duo', 800.00),
+    ('Trio', 1200.00),
+    ('Quartet', 1800.00),
+    ('Band', 2500.00)
+ON CONFLICT (category) DO NOTHING;
 
 -- ==============================
 -- COMMENTS / DOCUMENTATION

@@ -1,0 +1,13 @@
+CREATE TRIGGER trg_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER trg_requests_updated_at BEFORE UPDATE ON requests FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER trg_offers_updated_at BEFORE UPDATE ON offers FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER trg_notifications_updated_at BEFORE UPDATE ON notifications FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER trg_musician_availability_updated_at BEFORE UPDATE ON musician_availability FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER trg_pricing_config_updated_at BEFORE UPDATE ON pricing_config FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER trg_user_balances_updated_at BEFORE UPDATE ON user_balances FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER trg_user_transactions_updated_at BEFORE UPDATE ON user_transactions FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER trg_calculate_request_price BEFORE INSERT OR UPDATE ON requests FOR EACH ROW EXECUTE FUNCTION calculate_request_price();
+CREATE TRIGGER trg_user_transactions_after_insert_update AFTER INSERT OR UPDATE ON user_transactions FOR EACH ROW EXECUTE FUNCTION update_user_balance();
+CREATE TRIGGER trg_notify_musicians_new_request AFTER INSERT ON requests FOR EACH ROW EXECUTE FUNCTION notify_musicians_new_request();
+CREATE TRIGGER trg_notify_leader_new_offer AFTER INSERT ON offers FOR EACH ROW EXECUTE FUNCTION notify_leader_new_offer();
+CREATE TRIGGER trg_notify_musician_offer_selected AFTER UPDATE ON offers FOR EACH ROW EXECUTE FUNCTION notify_musician_offer_selected();
