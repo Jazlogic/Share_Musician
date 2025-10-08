@@ -70,7 +70,7 @@ router.post('/', authenticateToken, createChurchController);
  *               items:
  *                 $ref: '#/components/schemas/Church'
  */
-router.get('/', authenticateToken, getChurchesController);
+router.get('/', authenticateToken, getChurchesController); 
 
 /**
  * @swagger

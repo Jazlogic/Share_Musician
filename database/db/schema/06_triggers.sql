@@ -50,3 +50,8 @@ CREATE TRIGGER trg_notify_leader_new_offer AFTER INSERT ON offers FOR EACH ROW E
 -- Su propósito es notificar al músico cuya oferta ha sido seleccionada (aceptada) para un evento,
 -- utilizando la función 'notify_musician_offer_selected()' para enviar la notificación correspondiente.
 CREATE TRIGGER trg_notify_musician_offer_selected AFTER UPDATE ON offers FOR EACH ROW EXECUTE FUNCTION notify_musician_offer_selected();
+
+-- Este disparador se activa DESPUÉS de una operación de ACTUALIZACIÓN en la tabla 'requests'.
+-- Su propósito es notificar al líder y al músico cuando el estado de la solicitud cambia a 'IN_PROGRESS',
+-- utilizando la función 'notify_event_status_change()' para enviar las notificaciones pertinentes.
+CREATE TRIGGER trg_notify_event_status_change AFTER UPDATE ON requests FOR EACH ROW WHEN (NEW.status = 'IN_PROGRESS' AND OLD.status IS DISTINCT FROM 'IN_PROGRESS') EXECUTE FUNCTION notify_event_status_change();

@@ -409,3 +409,110 @@ BEGIN
   RETURN NEW; -- Retorna el nuevo registro de la oferta.
 END;
 $$ LANGUAGE plpgsql; -- Especifica que la función está escrita en PL/pgSQL.
+
+-- Función: notify_event_status_change()
+-- Propósito: Notifica al líder y al músico cuando el estado de una solicitud cambia a IN_PROGRESS.
+-- Uso: Se utiliza como un TRIGGER AFTER UPDATE en la tabla 'requests'.
+CREATE OR REPLACE FUNCTION notify_event_status_change()
+RETURNS TRIGGER AS $$
+DECLARE
+  musician_id_val UUID;
+  leader_name VARCHAR(255);
+  musician_name VARCHAR(255);
+  event_date_str TEXT;
+BEGIN
+  -- Solo procede si el estado cambia a 'IN_PROGRESS'
+  IF NEW.status = 'IN_PROGRESS' AND OLD.status IS DISTINCT FROM 'IN_PROGRESS' THEN
+    -- Obtener el ID del músico de la oferta aceptada para esta solicitud
+    SELECT musician_id INTO musician_id_val
+    FROM offers
+    WHERE request_id = NEW.id AND status = 'ACCEPTED'
+    LIMIT 1;
+
+    -- Obtener nombres del líder y del músico
+    SELECT name INTO leader_name FROM users WHERE id = NEW.leader_id;
+    SELECT name INTO musician_name FROM users WHERE id = musician_id_val;
+
+    -- Formatear la fecha del evento
+    event_date_str := TO_CHAR(NEW.event_date, 'DD/MM/YYYY HH24:MI');
+
+    -- Notificar al líder
+    PERFORM create_notification(
+      NEW.leader_id,
+      'request_update',
+      'Evento en Progreso: ' || event_date_str,
+      'Tu solicitud para el evento del ' || event_date_str || ' con ' || musician_name || ' ha comenzado.',
+      '/requests/' || NEW.id
+    );
+
+    -- Notificar al músico
+    PERFORM create_notification(
+      musician_id_val,
+      'request_update',
+      'Evento en Progreso: ' || event_date_str,
+      'El evento del ' || event_date_str || ' con ' || leader_name || ' ha comenzado.',
+      '/requests/' || NEW.id
+    );
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Función: send_event_reminder(p_request_id UUID)
+-- Propósito: Envía un recordatorio al líder y al músico 10 minutos antes del inicio de un evento.
+-- Uso: Esta función debe ser invocada por un sistema de tareas programadas externo (ej. cron job).
+CREATE OR REPLACE FUNCTION send_event_reminder(
+  p_request_id UUID
+) RETURNS VOID AS $$
+DECLARE
+  musician_id_val UUID;
+  leader_id_val UUID;
+  leader_name VARCHAR(255);
+  musician_name VARCHAR(255);
+  event_date_val TIMESTAMP WITH TIME ZONE;
+  event_date_str TEXT;
+BEGIN
+  -- Obtener detalles de la solicitud
+  SELECT leader_id, event_date
+  INTO leader_id_val, event_date_val
+  FROM requests
+  WHERE id = p_request_id;
+
+  -- Obtener el ID del músico de la oferta aceptada para esta solicitud
+  SELECT musician_id INTO musician_id_val
+  FROM offers
+  WHERE request_id = p_request_id AND status = 'ACCEPTED'
+  LIMIT 1;
+
+  -- Si no se encuentra la solicitud o el músico, salir
+  IF leader_id_val IS NULL OR musician_id_val IS NULL THEN
+    RETURN;
+  END IF;
+
+  -- Obtener nombres del líder y del músico
+  SELECT name INTO leader_name FROM users WHERE id = leader_id_val;
+  SELECT name INTO musician_name FROM users WHERE id = musician_id_val;
+
+  -- Formatear la fecha del evento
+  event_date_str := TO_CHAR(event_date_val, 'DD/MM/YYYY HH24:MI');
+
+  -- Notificar al líder
+  PERFORM create_notification(
+    leader_id_val,
+    'event_reminder',
+    'Recordatorio: Evento Próximo - ' || event_date_str,
+    'Tu evento con ' || musician_name || ' comienza en 10 minutos.',
+    '/requests/' || p_request_id
+  );
+
+  -- Notificar al músico
+  PERFORM create_notification(
+    musician_id_val,
+    'event_reminder',
+    'Recordatorio: Evento Próximo - ' || event_date_str,
+    'Tu evento con ' || leader_name || ' comienza en 10 minutos.',
+    '/requests/' || p_request_id
+  );
+END;
+$$ LANGUAGE plpgsql;

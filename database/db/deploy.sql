@@ -1,5 +1,6 @@
 -- Deploy all schema files
-
+CREATE DATABASE share_musician;
+select * from users;
 -- 00_extensions.sql
 \ir 'schema/00_extensions.sql'
 
