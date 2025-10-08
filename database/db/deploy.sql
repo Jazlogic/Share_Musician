@@ -32,3 +32,6 @@
 
 -- 08_1_seed_event_types.sql
 \ir 'schema/08_1_seed_event_types.sql'
+
+-- 09_materialized_views.sql
+\ir 'schema/09_materialized_views.sql'
