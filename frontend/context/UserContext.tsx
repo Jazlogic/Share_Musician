@@ -36,6 +36,7 @@ interface UserContextType {
   getProfileImageHistory: (userId: string) => Promise<{ profileKey: string; url: string; uploadedAt: string; }[] | null>;
   selectProfileImageFromHistory: (userId: string, profileKey: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -49,7 +50,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUser = async (userId: string) => {
+  const fetchUser = useCallback(async (userId: string) => {
     setLoading(true);
     setError(null);
     try {
@@ -71,7 +72,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const updateUserProfile = async (updatedUser: Partial<User>) => {
     setLoading(true);
@@ -240,19 +241,22 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     }
   };
 
-  useEffect(() => {
-    const loadUser = async () => {
-      const storedUserId = await AsyncStorage.getItem('userId');
-      if (storedUserId) {
-        fetchUser(storedUserId);
-      } else {
-        setLoading(false);
-      }
-    };
-    loadUser();
-  }, []);
+    const refreshUser = useCallback(async () => {
+    setLoading(true); // Set loading to true at the start of refresh
+    const storedUserId = await AsyncStorage.getItem('userId');
+    if (storedUserId) {
+      await fetchUser(storedUserId);
+    } else {
+      setUser(null);
+      setLoading(false); // Set loading to false if no user is found
+    }
+  }, [fetchUser]);
 
-  const contextValue = { user, loading, error, fetchUser, updateUserProfile, getProfileImageUrl, uploadProfileImage, getProfileImageHistory, selectProfileImageFromHistory, logout };
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
+
+  const contextValue = { user, loading, error, fetchUser, updateUserProfile, getProfileImageUrl, uploadProfileImage, getProfileImageHistory, selectProfileImageFromHistory, logout, refreshUser };
 
   return (
     <UserContext.Provider value={contextValue}>

@@ -26,6 +26,7 @@ interface UserProfile {
   email_verified?: boolean;
   verification_token?: string | null;
   profilekey: string | null;
+
 }
 
 const PerfilScreen = () => {
@@ -41,6 +42,7 @@ const PerfilScreen = () => {
 
   useEffect(() => {
     const fetchProfileImage = async () => {
+      // console.log('user:', user);
       if (user?.profilekey) {
         
         const url = await getProfileImageUrl(user.profilekey);
@@ -173,6 +175,7 @@ const PerfilScreen = () => {
             <Text style={styles.detailValue}>{currentUser.email}</Text>
           </View>
           {currentUser.church_id && (
+            // Hay que implementar la logica para que aparezca el nombre de la iglesia.
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>ID de Iglesia:</Text>
               <Text style={styles.detailValue}>{currentUser.church_id}</Text>

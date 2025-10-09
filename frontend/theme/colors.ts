@@ -38,6 +38,10 @@ export const AppColors = {
     white: 'rgba(255, 255, 255, 1)', // Texto blanco
     black: 'rgba(0, 0, 0, 1)', // Texto negro
     secondary: 'rgba(155, 161, 166, 1)', // Gris medio para texto secundario
+    defaultLight: 'rgba(17, 24, 28, 1)',
+    defaultDark: 'rgba(236, 237, 238, 1)',
+    subtitleLight: 'rgba(104, 112, 118, 1)',
+    subtitleDark: 'rgba(155, 161, 166, 1)',
   },
   // Colores de iconos
   icon: {
@@ -63,8 +67,45 @@ export const AppColors = {
   },
   // Colores de los ítems de las cards
   items:{
-    backgroundLight: 'rgba(215, 228, 255, 0.82)',
-    backgroundDark: 'rgba(80, 131, 197, 0.39)',
+    backgroundLight: 'rgba(234, 239, 249, 0.82)',
+    backgroundDark: 'rgba(255, 255, 255, 0.1)',
+    borderTopLight: 'rgba(238, 238, 238, 1)',
+    borderBottomDark: 'rgba(51, 51, 51, 1)',
+    borderLight: 'rgb(3, 179, 255)',
+    borderDark: 'rgb(90, 145, 255)',
+    textDark: 'rgba(236, 237, 238, 1)',
+    textLight: 'rgba(17, 24, 28, 1)',
+  },
+  card: {
+    backgroundLight: 'rgba(255, 255, 255, 1)',
+    backgroundDark: 'rgba(33, 33, 33, 1)',
+  },
+  button: {
+    backgroundLight: 'rgba(51, 102, 204, 1)',
+    backgroundDark: 'rgba(10, 126, 164, 1)',
+    textLight: 'rgba(255, 255, 255, 1)',
+    textDark: 'rgba(255, 255, 255, 1)',
+  },
+  transaction: {
+    incomeLight: 'rgba(46, 204, 113, 1)',
+    incomeDark: 'rgba(46, 204, 113, 1)',
+    expenseLight: 'rgba(231, 76, 60, 1)',
+    expenseDark: 'rgba(231, 76, 60, 1)',
+  },
+  status: {
+    pending: 'rgba(230, 126, 34, 1)', // Naranja para estado pendiente
+    completed: 'rgba(46, 204, 113, 1)', // Verde para estado completado
+    default: 'rgba(155, 161, 166, 1)', // Gris medio para estado por defecto
+  },
+  cardsRequest: {
+    gradientStartLight: 'rgb(180, 205, 255)',
+    gradientEndLight: 'rgb(224, 234, 255)',
+    gradientStartDark: 'rgba(26, 43, 76, 1)',
+    gradientEndDark: 'rgba(51, 102, 204, 1)',
+    primaryBackgroundLight: 'rgba(234, 239, 249, 0.82)',
+    primaryBackgroundDark: 'rgba(255, 255, 255, 0.1)',
+    secondaryBackgroundLight: 'rgba(216, 227, 248, 0.82)',
+    secondaryBackgroundDark: 'rgba(255, 255, 255, 0.1)',
     borderTopLight: 'rgba(238, 238, 238, 1)',
     borderBottomDark: 'rgba(51, 51, 51, 1)',
     borderLight: 'rgb(3, 179, 255)',
