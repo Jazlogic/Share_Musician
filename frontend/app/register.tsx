@@ -37,7 +37,7 @@ export default function RegisterScreen() {
       const response = await api.post<MessageResponse>('/auth/register', { name: trimmedName, email: trimmedEmail, phone: trimmedPhone });
       if (response.status === 201) {
         Alert.alert('Registro exitoso', response.data.message);
-        router.replace('/verify-email');
+        router.replace({ pathname: '/verify-email', params: { email: trimmedEmail } });
       } else {
         Alert.alert('Error de registro', response.data.message || 'Algo salió mal');
       }

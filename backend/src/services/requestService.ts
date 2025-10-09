@@ -7,14 +7,17 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-interface RequestData {
-  leader_id: string;
-  event_type_id: string;
+export interface RequestData {
+  client_id: string;
+  title: string;
+  description?: string;
+  category?: string; // Temporal, will be converted to event_type_id
+  instrument?: string; // Temporal, will be converted to instrument_ids
+  event_type_id?: string;
   event_date: string;
   start_time: string;
   end_time: string;
-  location: object;
-  description?: string;
+  location?: object; // Made optional
   instrument_ids?: string[]; // Array of instrument UUIDs
   // Optional fields that might be passed
   duration?: string;
@@ -33,86 +36,106 @@ interface RequestData {
   reopened_from_id?: string;
 }
 
+// Helper function to get event_type_id from category name
+const getEventTypeIdByCategory = async (category: string): Promise<string> => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'SELECT event_type_id FROM event_types WHERE name = $1',
+      [category]
+    );
+    if (result.rows.length === 0) {
+      throw new Error(`Event type with category '${category}' not found.`);
+    }
+    return result.rows[0].event_type_id;
+  } finally {
+    client.release();
+  }
+};
+
+// Helper function to get instrument_ids from instrument name
+const getInstrumentIdsByInstrumentName = async (instrumentName: string): Promise<string[]> => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'SELECT instrument_id FROM instruments WHERE name = $1',
+      [instrumentName]
+    );
+    if (result.rows.length === 0) {
+      throw new Error(`Instrument with name '${instrumentName}' not found.`);
+    }
+    return [result.rows[0].instrument_id]; // Assuming one instrument for now
+  } finally {
+    client.release();
+  }
+};
+
 export const createRequest = async (requestData: RequestData) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
     const {
-      leader_id,
-      event_type_id,
+      client_id,
+      title,
+      description,
+      category,
+      instrument,
       event_date,
       start_time,
       end_time,
       location,
-      description,
-      instrument_ids,
-      duration,
-      base_rate,
-      duration_hours,
-      distance_km,
-      experience_factor,
-      instrument_factor,
-      system_fee,
-      total_price,
-      extra_amount,
-      is_public,
-      status = 'CREATED',
-      cancelled_by,
-      cancellation_reason,
-      reopened_from_id,
+      total_price: price, // Renamed from total_price to price to match frontend
+      ...optionalFields
     } = requestData;
+
+    // Convert category to event_type_id
+    let event_type_id: string | undefined;
+    if (category) {
+      event_type_id = await getEventTypeIdByCategory(category);
+    }
+
+    // Convert instrument to instrument_ids
+    let instrument_ids: string[] | undefined;
+    if (instrument) {
+      instrument_ids = await getInstrumentIdsByInstrumentName(instrument);
+    }
+
+    // Basic validation
+    if (!client_id || !event_type_id || !event_date || !start_time || !end_time || !title || !location) {
+      throw new Error('Missing required fields: client_id, title, event_type_id, event_date, start_time, end_time, location');
+    }
 
     const requestQuery = `
       INSERT INTO requests (
         leader_id,
+        title,
         event_type_id,
         event_date,
         start_time,
         end_time,
         location,
         description,
-        duration,
-        base_rate,
-        duration_hours,
-        distance_km,
-        experience_factor,
-        instrument_factor,
-        system_fee,
         total_price,
-        extra_amount,
-        is_public,
         status,
-        cancelled_by,
-        cancellation_reason,
-        reopened_from_id
+        is_public
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
       ) RETURNING id;
     `;
 
     const requestValues = [
-      leader_id,
+      client_id,
+      title,
       event_type_id,
       event_date,
       start_time,
       end_time,
       JSON.stringify(location),
       description || null,
-      duration || null,
-      base_rate || null,
-      duration_hours || null,
-      distance_km || null,
-      experience_factor || 1,
-      instrument_factor || 1,
-      system_fee || null,
-      total_price || null,
-      extra_amount || 0,
-      is_public !== undefined ? is_public : true,
-      status,
-      cancelled_by || null,
-      cancellation_reason || null,
-      reopened_from_id || null,
+      price || null,
+      optionalFields.status || 'CREATED',
+      optionalFields.is_public !== undefined ? optionalFields.is_public : true,
     ];
 
     const result = await client.query(requestQuery, requestValues);

@@ -1,32 +1,33 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { api, MessageResponse } from '../services/api';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
-import { Link, useRouter, useLocalSearchParams } from 'expo-router';
-import React, { useState, useEffect } from 'react';
+import { Link, useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { api, MessageResponse } from '../services/api';
 
-export default function VerifyEmailScreen() {
-  const { email: emailParam } = useLocalSearchParams();
-  const [email, setEmail] = useState((emailParam as string) || '');
-  const [verificationCode, setVerificationCode] = useState('');
+export default function RequestPasswordResetScreen() {
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    if (emailParam) {
-      setEmail(emailParam as string);
+  const handleRequestPasswordReset = async () => {
+    if (!email) {
+      Alert.alert('Error', 'Por favor, introduce tu correo electrónico.');
+      return;
     }
-  }, [emailParam]);
 
-  const handleVerifyEmail = async () => {
+    setSubmitting(true);
     try {
-      const response = await api.post<MessageResponse>('/auth/verify-email', { email, code: verificationCode });
+      const response = await api.post<MessageResponse>('/auth/request-password-reset', { email });
       if (response.status === 200) {
-        Alert.alert('Verificación exitosa', response.data.message);
-        router.replace({ pathname: '/set-password', params: { email, code: verificationCode } });
+        Alert.alert('Correo enviado', response.data.message || 'Se ha enviado un correo electrónico con instrucciones para restablecer tu contraseña.');
+        router.push('/set-password'); // Redirigir a la pantalla para establecer la contraseña
       } else {
-        Alert.alert('Error de verificación', response.data.message || 'Algo salió mal');
+        Alert.alert('Error', response.data.message || 'Algo salió mal al solicitar el restablecimiento de contraseña.');
       }
     } catch (error: any) {
       Alert.alert('Error', error.message || 'No se pudo conectar al servidor.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -38,7 +39,7 @@ export default function VerifyEmailScreen() {
       end={{ x: 1, y: 1 }}
     >
       <View style={styles.content}>
-        <Text style={styles.welcomeText}>Verifica tu correo electrónico</Text>
+        <Text style={styles.welcomeText}>Restablecer Contraseña</Text>
         <TextInput
           style={styles.input}
           placeholder="Correo electrónico"
@@ -46,17 +47,15 @@ export default function VerifyEmailScreen() {
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
-          editable={!emailParam} // Make email editable only if not passed as param
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Código de verificación"
-          placeholderTextColor="#A9A9A9"
-          value={verificationCode}
-          onChangeText={setVerificationCode}
-        />
-        <TouchableOpacity style={styles.verifyButton} onPress={handleVerifyEmail}>
-          <Text style={styles.verifyButtonText}>VERIFICAR</Text>
+        <TouchableOpacity
+          style={styles.requestButton}
+          onPress={handleRequestPasswordReset}
+          disabled={submitting}
+        >
+          <Text style={styles.requestButtonText}>
+            {submitting ? 'ENVIANDO...' : 'SOLICITAR RESTABLECIMIENTO'}
+          </Text>
         </TouchableOpacity>
         <View style={styles.linksContainer}>
           <Link href="/" asChild>
@@ -87,7 +86,6 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   input: {
-    width: '100%',
     height: 50,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 25,
@@ -96,7 +94,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginBottom: 15,
   },
-  verifyButton: {
+  requestButton: {
     width: '100%',
     height: 50,
     backgroundColor: '#007BFF',
@@ -104,10 +102,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
-    boxShadow: '0px 2px 6.27px rgba(0, 0, 0, 0.34)',
+    boxShadow: '0px 5px 6.27px rgba(0, 0, 0, 0.34)',
     elevation: 10,
   },
-  verifyButtonText: {
+  requestButtonText: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#FFFFFF',

@@ -1,15 +1,30 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
-import { Link, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { Link, useRouter, useLocalSearchParams } from 'expo-router';
+import React, { useState, useEffect } from 'react';
 import { api, MessageResponse } from '../services/api';
+import { Ionicons } from '@expo/vector-icons';
+import { useUser } from '../context/UserContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SetPasswordScreen() {
-  const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
+  const { email: emailParam, code: codeParam } = useLocalSearchParams();
+  const [email, setEmail] = useState((emailParam as string) || '');
+  const [code, setCode] = useState((codeParam as string) || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const { refreshUser } = useUser();
+
+  useEffect(() => {
+    if (emailParam) {
+      setEmail(emailParam as string);
+    }
+    if (codeParam) {
+      setCode(codeParam as string);
+    }
+  }, [emailParam, codeParam]);
 
   const handleSetPassword = async () => {
     if (password !== confirmPassword) {
@@ -21,7 +36,15 @@ export default function SetPasswordScreen() {
       const response = await api.post<MessageResponse>('/auth/set-password', { email, code, password });
       if (response.status === 200) {
         Alert.alert('Contraseña establecida', response.data.message);
-        router.replace('/');
+        if (response.data.user && response.data.user.name && response.data.user.user_id && response.data.token) {
+          await AsyncStorage.setItem('userName', response.data.user.name);
+          await AsyncStorage.setItem('userId', response.data.user.user_id);
+          await AsyncStorage.setItem('userToken', response.data.token);
+          await refreshUser();
+          router.replace('/home');
+        } else {
+          router.replace('/');
+        }
       } else {
         Alert.alert('Error', response.data.message || 'Algo salió mal');
       }
@@ -39,37 +62,67 @@ export default function SetPasswordScreen() {
     >
       <View style={styles.content}>
         <Text style={styles.welcomeText}>Establece tu contraseña</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Correo electrónico"
-          placeholderTextColor="#A9A9A9"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Código de verificación"
-          placeholderTextColor="#A9A9A9"
-          value={code}
-          onChangeText={setCode}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Nueva contraseña"
-          placeholderTextColor="#A9A9A9"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Confirmar nueva contraseña"
-          placeholderTextColor="#A9A9A9"
-          secureTextEntry
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-        />
+        {!emailParam && (
+          <TextInput
+            style={styles.input}
+            placeholder="Correo electrónico"
+            placeholderTextColor="#A9A9A9"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+            editable={!emailParam} // Make email editable only if not passed as param
+          />
+        )}
+        {!codeParam && (
+          <TextInput
+            style={styles.input}
+            placeholder="Código de verificación"
+            placeholderTextColor="#A9A9A9"
+            value={code}
+            onChangeText={setCode}
+            editable={!codeParam} // Make code editable only if not passed as param
+          />
+        )}
+        <View style={styles.passwordInputContainer}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Nueva contraseña"
+            placeholderTextColor="#A9A9A9"
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity
+            style={styles.togglePasswordButton}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            <Ionicons
+              name={showPassword ? 'eye-off' : 'eye'}
+              size={24}
+              color="#A9A9A9"
+            />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.passwordInputContainer}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Confirmar nueva contraseña"
+            placeholderTextColor="#A9A9A9"
+            secureTextEntry={!showPassword}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+          />
+          <TouchableOpacity
+            style={styles.togglePasswordButton}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            <Ionicons
+              name={showPassword ? 'eye-off' : 'eye'}
+              size={24}
+              color="#A9A9A9"
+            />
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity style={styles.setPasswordButton} onPress={handleSetPassword}>
           <Text style={styles.setPasswordButtonText}>ESTABLECER CONTRASEÑA</Text>
         </TouchableOpacity>
@@ -136,5 +189,23 @@ const styles = StyleSheet.create({
   linkText: {
     color: '#ADD8E6',
     fontSize: 16,
+  },
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 25,
+    marginBottom: 15,
+  },
+  passwordInput: {
+    flex: 1,
+    height: 50,
+    paddingHorizontal: 20,
+    fontSize: 18,
+    color: '#FFFFFF',
+  },
+  togglePasswordButton: {
+    padding: 10,
   },
 });

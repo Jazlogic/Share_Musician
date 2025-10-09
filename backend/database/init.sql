@@ -44,8 +44,6 @@ CREATE TABLE IF NOT EXISTS users (
 ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_expires_at TIMESTAMP WITH TIME ZONE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token_expires_at TIMESTAMP WITH TIME ZONE;
 select * from users;
-insert into  users (name, email, phone, role) values ('Jefry Agustin astacio Sanchez','829-441-9998','admin');
-select * from users;
 
 delete from users where email = 'astaciosanchezjefryagustin@gmail.com';
 

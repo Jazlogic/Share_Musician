@@ -3,31 +3,27 @@ import { createRequest, getCreatedRequests } from '../services/requestService';
 
 export const createRequestController = async (req: Request, res: Response) => {
   try {
-    const { leader_id, event_type_id, description, event_date, start_time, end_time, location, instrument_ids, ...optionalFields } = req.body;
-
-    // Basic validation
-    if (!leader_id || !event_type_id || !event_date || !start_time || !end_time || !location) {
-      return res.status(400).json({ message: 'Missing required fields: leader_id, event_type_id, event_date, start_time, end_time, location' });
-    }
+    const { client_id, title, description, category, instrument, event_date, start_time, end_time, location, price } = req.body;
 
     const newRequest = await createRequest({
-      leader_id,
-      event_type_id,
+      client_id,
+      title,
       description,
+      category,
+      instrument,
       event_date,
       start_time,
       end_time,
       location,
-      instrument_ids,
-      ...optionalFields,
+      total_price: price,
     });
-
-    res.status(201).json({ message: 'Music request created successfully', request: newRequest });
+    res.status(201).json(newRequest);
   } catch (error) {
     console.error('Error in createRequestController:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Error creating request' });
   }
 };
+
 
 export const getCreatedRequestsController = async (req: Request, res: Response) => {
   try {

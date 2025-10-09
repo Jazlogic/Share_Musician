@@ -98,6 +98,13 @@ export default function WelcomeScreen() {
             </TouchableOpacity>
           </Link>
         </View>
+        <View style={styles.linksContainer}>
+          <Link href="/request-password-reset" asChild>
+            <TouchableOpacity>
+              <Text style={styles.linkText}>¿Olvidaste tu contraseña?</Text>
+            </TouchableOpacity>
+          </Link>
+        </View>
       </View>
     </LinearGradient>
   );
@@ -111,6 +118,9 @@ const styles = StyleSheet.create({
     
   },
   content: {
+  
+    paddingTop:10,
+    marginTop: 20,
     alignItems: 'center',
     width: '80%',
     marginBottom: 10,
