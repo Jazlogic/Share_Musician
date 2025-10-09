@@ -1,15 +1,23 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { testDbConnection, register, login, verifyUserEmail, setUserPassword, resendVerificationEmailController, requestPasswordResetController, resetPasswordController } from '../controllers/authController';
 
 const router = Router();
 
-router.get('/test-db', testDbConnection);
-router.post('/register', register);
-router.post('/login', login);
-router.post('/verify-email', verifyUserEmail);
-router.post('/set-password', setUserPassword);
-router.post('/resend-verification-email', resendVerificationEmailController);
-router.post('/request-password-reset', requestPasswordResetController);
-router.post('/reset-password', resetPasswordController);
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minuto
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.get('/test-db', authLimiter, testDbConnection);
+router.post('/register', authLimiter, register);
+router.post('/login', authLimiter, login);
+router.post('/verify-email', authLimiter, verifyUserEmail);
+router.post('/set-password', authLimiter, setUserPassword);
+router.post('/resend-verification-email', authLimiter, resendVerificationEmailController);
+router.post('/request-password-reset', authLimiter, requestPasswordResetController);
+router.post('/reset-password', authLimiter, resetPasswordController);
 
 export default router;

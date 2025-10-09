@@ -24,3 +24,14 @@ export const sendVerificationEmail = async (to: string, code: string) => {
 
   await transporter.sendMail(mailOptions);
 };
+
+export const sendPasswordResetEmail = async (to: string, token: string) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to,
+    subject: 'Restablecimiento de contraseña - Share Musician',
+    html: `<p>Tu código para restablecer la contraseña es: <strong>${token}</strong></p><p>Si no solicitaste este cambio, ignora este correo.</p>`,
+  };
+
+  await transporter.sendMail(mailOptions);
+};

@@ -2,19 +2,21 @@ import pool from '../config/db';
 import { User } from '../types/db';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { generateVerificationCode, sendVerificationEmail } from '../utils/email';
+import { generateVerificationCode, sendVerificationEmail, sendPasswordResetEmail } from '../utils/email';
 import { v4 as uuidv4 } from 'uuid';
 
 export const registerUser = async (email: string, name: string, phone: string): Promise<User> => {
+  const normalizedEmail = email.trim().toLowerCase();
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
     const verificationCode = generateVerificationCode();
+    const verificationExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
 
     const userResult = await client.query(
-      'INSERT INTO users (email, name, phone, role, status, email_verified, verification_token) VALUES ($1, $2, $3, $4, $5, FALSE, $6) RETURNING user_id, email, name, phone, role, created_at, status',
-      [email, name, phone, 'musician', 'pending', verificationCode]
+      'INSERT INTO users (email, name, phone, role, status, email_verified, verification_token, verification_token_expires_at) VALUES ($1, $2, $3, $4, $5, FALSE, $6, $7) RETURNING user_id, email, name, phone, role, created_at, status',
+      [normalizedEmail, name, phone, 'musician', 'pending', verificationCode, verificationExpiresAt]
     );
     const newUser: User = userResult.rows[0];
 
@@ -31,13 +33,14 @@ export const registerUser = async (email: string, name: string, phone: string): 
 };
 
 export const setPassword = async (email: string, password: string, code: string): Promise<{ user: User; token: string }> => {
+  const normalizedEmail = email.trim().toLowerCase();
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
     const userResult = await client.query(
-      'SELECT user_id, email_verified, verification_token FROM users WHERE email = $1',
-      [email]
+      'SELECT user_id, email_verified, verification_token, verification_token_expires_at FROM users WHERE email = $1',
+      [normalizedEmail]
     );
     const user = userResult.rows[0];
 
@@ -51,6 +54,10 @@ export const setPassword = async (email: string, password: string, code: string)
 
     if (user.verification_token !== code) {
       throw new Error('Código de verificación inválido.');
+    }
+
+    if (user.verification_token_expires_at && new Date() > new Date(user.verification_token_expires_at)) {
+      throw new Error('El código de verificación ha expirado.');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -76,7 +83,7 @@ export const setPassword = async (email: string, password: string, code: string)
     }
 
     await client.query(
-      'UPDATE users SET status = $1, verification_token = NULL WHERE user_id = $2',
+      'UPDATE users SET status = $1, verification_token = NULL, verification_token_expires_at = NULL WHERE user_id = $2',
       ['active', user.user_id]
     );
 
@@ -99,13 +106,14 @@ export const setPassword = async (email: string, password: string, code: string)
 };
 
 export const verifyEmail = async (email: string, code: string): Promise<string> => {
+  const normalizedEmail = email.trim().toLowerCase();
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
     const userResult = await client.query(
-      'SELECT user_id, verification_token FROM users WHERE email = $1',
-      [email]
+      'SELECT user_id, verification_token, verification_token_expires_at FROM users WHERE email = $1',
+      [normalizedEmail]
     );
     const user = userResult.rows[0];
 
@@ -117,8 +125,13 @@ export const verifyEmail = async (email: string, code: string): Promise<string> 
       throw new Error('Código de verificación inválido');
     }
 
+    if (user.verification_token_expires_at && new Date() > new Date(user.verification_token_expires_at)) {
+      throw new Error('Código de verificación expirado');
+    }
+
+    // Mark email as verified but keep verification_token until password is set
     await client.query(
-      'UPDATE users SET email_verified = TRUE, verification_token = NULL WHERE user_id = $1',
+      'UPDATE users SET email_verified = TRUE WHERE user_id = $1',
       [user.user_id]
     );
 
@@ -133,11 +146,12 @@ export const verifyEmail = async (email: string, code: string): Promise<string> 
 };
 
 export const loginUser = async (email: string, password: string): Promise<{ user: User; token: string }> => {
+  const normalizedEmail = email.trim().toLowerCase();
   const client = await pool.connect();
   try {
     const userResult = await client.query(
       'SELECT user_id, email, name, phone, role, active_role, status, church_id, created_at, updated_at, email_verified FROM users WHERE email = $1',
-      [email]
+      [normalizedEmail]
     );
     const user: User = userResult.rows[0];
 
@@ -163,6 +177,10 @@ export const loginUser = async (email: string, password: string): Promise<{ user
 
     if (!user.email_verified) {
       throw new Error('Correo electrónico no verificado');
+    }
+
+    if (user.status !== 'active') {
+      throw new Error('Usuario inactivo');
     }
 
     const token = jwt.sign({ userId: user.user_id, role: user.role }, process.env.JWT_SECRET as string, { expiresIn: '24h' });
@@ -193,10 +211,11 @@ export const resendVerificationEmail = async (email: string): Promise<void> => {
     }
 
     const newVerificationCode = generateVerificationCode();
+    const newVerificationExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     await client.query(
-      'UPDATE users SET verification_token = $1 WHERE user_id = $2',
-      [newVerificationCode, user.user_id]
+      'UPDATE users SET verification_token = $1, verification_token_expires_at = $2 WHERE user_id = $3',
+      [newVerificationCode, newVerificationExpiresAt, user.user_id]
     );
 
     await sendVerificationEmail(user.email, newVerificationCode);
@@ -211,13 +230,14 @@ export const resendVerificationEmail = async (email: string): Promise<void> => {
 };
 
 export const requestPasswordReset = async (email: string): Promise<void> => {
+  const normalizedEmail = email.trim().toLowerCase();
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
     const userResult = await client.query(
       'SELECT user_id, email FROM users WHERE email = $1',
-      [email]
+      [normalizedEmail]
     );
     const user = userResult.rows[0];
 
@@ -234,8 +254,7 @@ export const requestPasswordReset = async (email: string): Promise<void> => {
     );
 
     // Enviar correo electrónico con el token de restablecimiento
-    // Por ahora, usaremos sendVerificationEmail como placeholder
-    await sendVerificationEmail(user.email, resetToken); // TODO: Crear una función sendPasswordResetEmail
+    await sendPasswordResetEmail(user.email, resetToken);
 
     await client.query('COMMIT');
   } catch (error) {
@@ -261,7 +280,7 @@ export const resetPassword = async (token: string, newPassword: string): Promise
       throw new Error('Token de restablecimiento de contraseña inválido.');
     }
 
-    if (new Date() > new Date(user.reset_password_expires)) {
+    if (new Date() > new Date(user.reset_password_expires_at)) {
       throw new Error('El token de restablecimiento de contraseña ha expirado.');
     }
 

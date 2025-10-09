@@ -8,120 +8,134 @@ const pool = new Pool({
 });
 
 interface RequestData {
-  client_id: string;
-  musician_id?: string;
-  title: string;
-  description: string;
-  category?: string;
-  instrument?: string;
-  location?: object;
+  leader_id: string;
+  event_type_id: string;
   event_date: string;
   start_time: string;
   end_time: string;
-  event_duration?: string;
-  price?: number;
-  tip?: number;
-  status?: string;
-  updated_by?: string;
-  expiration_date?: string;
-  cancellation_reason?: string;
-  client_rating?: number;
-  musician_rating?: number;
-  client_comment?: string;
-  musician_comment?: string;
+  location: object;
+  description?: string;
+  instrument_ids?: string[]; // Array of instrument UUIDs
+  // Optional fields that might be passed
+  duration?: string;
+  base_rate?: number;
+  duration_hours?: number;
+  distance_km?: number;
+  experience_factor?: number;
+  instrument_factor?: number;
+  system_fee?: number;
+  total_price?: number;
+  extra_amount?: number;
   is_public?: boolean;
+  status?: string;
+  cancelled_by?: string;
+  cancellation_reason?: string;
   reopened_from_id?: string;
 }
 
 export const createRequest = async (requestData: RequestData) => {
-  const {
-    client_id,
-    musician_id,
-    title,
-    description,
-    category,
-    instrument,
-    location,
-    event_date,
-    start_time,
-    end_time,
-    event_duration,
-    price,
-    tip,
-    status = 'CREATED',
-    updated_by,
-    expiration_date,
-    cancellation_reason,
-    client_rating,
-    musician_rating,
-    client_comment,
-    musician_comment,
-    is_public = true,
-    reopened_from_id,
-  } = requestData;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-  const query = `
-    INSERT INTO request (
-      client_id,
-      musician_id,
-      title,
-      description,
-      category,
-      instrument,
-      location,
+    const {
+      leader_id,
+      event_type_id,
       event_date,
       start_time,
       end_time,
-      event_duration,
-      price,
-      tip,
-      status,
-      updated_by,
-      expiration_date,
-      cancellation_reason,
-      client_rating,
-      musician_rating,
-      client_comment,
-      musician_comment,
+      location,
+      description,
+      instrument_ids,
+      duration,
+      base_rate,
+      duration_hours,
+      distance_km,
+      experience_factor,
+      instrument_factor,
+      system_fee,
+      total_price,
+      extra_amount,
       is_public,
-      reopened_from_id
-    ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
-    ) RETURNING *;
-  `;
+      status = 'CREATED',
+      cancelled_by,
+      cancellation_reason,
+      reopened_from_id,
+    } = requestData;
 
-  const values = [
-    client_id,
-    musician_id || null,
-    title,
-    description,
-    category || null,
-    instrument || null,
-    location ? JSON.stringify(location) : null,
-    event_date,
-    start_time,
-    end_time,
-    event_duration || null,
-    price || null,
-    tip || null,
-    status,
-    updated_by || null,
-    expiration_date || null,
-    cancellation_reason || null,
-    client_rating || null,
-    musician_rating || null,
-    client_comment || null,
-    musician_comment || null,
-    is_public,
-    reopened_from_id || null,
-  ];
-// console.log('values:', values); 
-  try {
-    const result = await pool.query(query, values);
-    return result.rows[0];
+    const requestQuery = `
+      INSERT INTO requests (
+        leader_id,
+        event_type_id,
+        event_date,
+        start_time,
+        end_time,
+        location,
+        description,
+        duration,
+        base_rate,
+        duration_hours,
+        distance_km,
+        experience_factor,
+        instrument_factor,
+        system_fee,
+        total_price,
+        extra_amount,
+        is_public,
+        status,
+        cancelled_by,
+        cancellation_reason,
+        reopened_from_id
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
+      ) RETURNING id;
+    `;
+
+    const requestValues = [
+      leader_id,
+      event_type_id,
+      event_date,
+      start_time,
+      end_time,
+      JSON.stringify(location),
+      description || null,
+      duration || null,
+      base_rate || null,
+      duration_hours || null,
+      distance_km || null,
+      experience_factor || 1,
+      instrument_factor || 1,
+      system_fee || null,
+      total_price || null,
+      extra_amount || 0,
+      is_public !== undefined ? is_public : true,
+      status,
+      cancelled_by || null,
+      cancellation_reason || null,
+      reopened_from_id || null,
+    ];
+
+    const result = await client.query(requestQuery, requestValues);
+    const requestId = result.rows[0].id;
+
+    if (instrument_ids && instrument_ids.length > 0) {
+      const instrumentInsertPromises = instrument_ids.map(instrument_id =>
+        client.query(
+          'INSERT INTO request_instruments (request_id, instrument_id) VALUES ($1, $2)',
+          [requestId, instrument_id]
+        )
+      );
+      await Promise.all(instrumentInsertPromises);
+    }
+
+    await client.query('COMMIT');
+    return { id: requestId, ...requestData };
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Error creating request:', error);
     throw new Error('Could not create request');
+  } finally {
+    client.release();
   }
 };
 

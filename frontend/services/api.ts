@@ -1,7 +1,26 @@
-// const BASE_URL = 'http://localhost:3001';
-// const BASE_URL:string = 'http://172.20.10.5:3001';
-export const BASE_URL = 'http://192.168.56.130:3001';
-// export const BASE_URL = 'http://192.168.100.101:3001';
+import Constants from 'expo-constants';
+
+function resolveBaseUrl(): string {
+  // Highest priority: public env var (Expo)
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim().length > 0) {
+    return envUrl.trim();
+  }
+
+  // Try to infer LAN host from Expo hostUri/debuggerHost
+  const hostUri = (Constants as any)?.expoConfig?.hostUri || (Constants as any)?.manifest?.debuggerHost;
+  if (typeof hostUri === 'string') {
+    const host = hostUri.split(':')[0];
+    if (host) {
+      return `http://${host}:3001`;
+    }
+  }
+
+  // Fallback to localhost
+  return 'http://localhost:3001';
+}
+
+export const BASE_URL = resolveBaseUrl();
 
 interface RequestOptions extends RequestInit {
   headers?: Record<string, string>;

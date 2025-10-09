@@ -11,7 +11,7 @@ export default function VerifyEmailScreen() {
 
   const handleVerifyEmail = async () => {
     try {
-      const response = await api.post<MessageResponse>('/auth/verify-email', { email, verificationCode });
+      const response = await api.post<MessageResponse>('/auth/verify-email', { email, code: verificationCode });
       if (response.status === 200) {
         Alert.alert('Verificación exitosa', response.data.message);
         router.replace('/set-password');

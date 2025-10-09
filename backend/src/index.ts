@@ -10,6 +10,9 @@ import userRoutes from './routes/user'; // Import the new user routes
 import storageRoutes from './routes/storage';
 import postRoutes from './routes/post'; // Import the new post routes
 import requestRoutes from './routes/request';
+import eventTypeRoutes from './routes/event_type';
+import instrumentRoutes from './routes/instrument';
+import requestStatusRoutes from './routes/request_status';
 
 dotenv.config();
 
@@ -150,6 +153,9 @@ app.use('/users', userRoutes);
 app.use('/storage', storageRoutes);
 app.use('/posts', postRoutes); // Use the new post routes
 app.use('/requests', requestRoutes);
+app.use('/event-types', eventTypeRoutes);
+app.use('/instruments', instrumentRoutes);
+app.use('/request-statuses', requestStatusRoutes);
 
 app.get('/', (req, res) => {
   res.send('Share Musician API is running');

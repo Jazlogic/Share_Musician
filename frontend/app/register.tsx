@@ -1,18 +1,40 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Link, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { api, MessageResponse } from '../services/api';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
 
   const handleRegister = async () => {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPhone = phone.trim();
+
+    if (!trimmedName || !trimmedEmail || !trimmedPhone) {
+      Alert.alert('Campos requeridos', 'Nombre, correo y teléfono son obligatorios.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      Alert.alert('Correo inválido', 'Ingresa un correo electrónico válido.');
+      return;
+    }
+
+    if (trimmedPhone.replace(/\D/g, '').length < 7) {
+      Alert.alert('Teléfono inválido', 'Ingresa un teléfono válido.');
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      const response = await api.post<MessageResponse>('/auth/register', { name, email, phone });
+      const response = await api.post<MessageResponse>('/auth/register', { name: trimmedName, email: trimmedEmail, phone: trimmedPhone });
       if (response.status === 201) {
         Alert.alert('Registro exitoso', response.data.message);
         router.replace('/verify-email');
@@ -21,6 +43,8 @@ export default function RegisterScreen() {
       }
     } catch (error: any) {
       Alert.alert('Error', error.message || 'No se pudo conectar al servidor.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -57,8 +81,12 @@ export default function RegisterScreen() {
           value={phone}
           onChangeText={setPhone}
         />
-        <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
-          <Text style={styles.registerButtonText}>REGISTRARSE</Text>
+        <TouchableOpacity style={[styles.registerButton, submitting && { opacity: 0.7 }]} onPress={handleRegister} disabled={submitting}>
+          {submitting ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.registerButtonText}>{'REGISTRARSE'}</Text>
+          )}
         </TouchableOpacity>
         <View style={styles.linksContainer}>
           <Link href="/" asChild>

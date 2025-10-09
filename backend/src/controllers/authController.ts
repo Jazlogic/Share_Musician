@@ -211,6 +211,9 @@ export const setUserPassword = async (req: Request, res: Response) => {
   const { email, password, code } = req.body;
 
   try {
+    if (typeof password !== 'string' || password.length < 6) {
+      return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres.' });
+    }
     const { user, token } = await setPassword(email, password, code);
     res.status(200).json({ message: 'Contraseña establecida exitosamente y usuario activado.', user, token });
   } catch (error: any) {
@@ -385,6 +388,9 @@ export const resetPasswordController = async (req: Request, res: Response) => {
   const { token, newPassword } = req.body;
 
   try {
+    if (typeof newPassword !== 'string' || newPassword.length < 6) {
+      return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres.' });
+    }
     await resetPassword(token, newPassword);
     res.status(200).json({ message: 'Contraseña restablecida exitosamente.' });
   } catch (error: any) {

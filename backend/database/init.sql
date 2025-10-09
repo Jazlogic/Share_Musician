@@ -37,11 +37,17 @@ CREATE TABLE IF NOT EXISTS users (
     verification_token VARCHAR(255) UNIQUE,
     profileKey VARCHAR(255) DEFAULT NULL,
     reset_password_token VARCHAR(255),
-    reset_password_expires_at TIMESTAMP WITH TIME ZONE
+    reset_password_expires_at TIMESTAMP WITH TIME ZONE,
+    verification_token_expires_at TIMESTAMP WITH TIME ZONE
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_expires_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token_expires_at TIMESTAMP WITH TIME ZONE;
 select * from users;
-insert into  users (name, email, phone, role) values ('Jefry Agustin astacio Sanchez','astaciosanchezjefryagustin@gmail.com','829-441-9998','admin');
+insert into  users (name, email, phone, role) values ('Jefry Agustin astacio Sanchez','829-441-9998','admin');
 select * from users;
+
+delete from users where email = 'astaciosanchezjefryagustin@gmail.com';
 
 -- Tabla para el historial de imágenes de perfil
 CREATE TABLE IF NOT EXISTS user_profile_image_history (
@@ -99,12 +105,6 @@ BEGIN
     END IF;
 END
 $$;
-
-ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255) UNIQUE;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS profileKey VARCHAR(255) DEFAULT NULL;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_token VARCHAR(255);
-ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_expires_at TIMESTAMP WITH TIME ZONE;
 
 -- Tabla para Publicaciones (Posts)
 CREATE TABLE IF NOT EXISTS posts (

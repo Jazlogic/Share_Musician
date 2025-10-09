@@ -26,32 +26,28 @@ const router = Router();
  *           schema:
  *             type: object
  *             required:
- *               - client_id
- *               - musician_id
- *               - genre
- *               - description
+ *               - leader_id
+ *               - event_type_id
+ *               - event_date
  *               - start_time
  *               - end_time
- *               - event_date
- *               - event_duration
  *               - location
- *               - payment_amount
- *               - status
  *             properties:
- *               client_id:
+ *               leader_id:
  *                 type: string
  *                 format: uuid
- *                 description: The ID of the client making the request.
- *               musician_id:
+ *                 description: The ID of the leader making the request.
+ *               event_type_id:
  *                 type: string
  *                 format: uuid
- *                 description: The ID of the musician being requested.
- *               genre:
- *                 type: string
- *                 description: The music genre requested.
+ *                 description: The ID of the event type.
  *               description:
  *                 type: string
  *                 description: A detailed description of the request.
+ *               event_date:
+ *                 type: string
+ *                 format: date
+ *                 description: The date of the event.
  *               start_time:
  *                 type: string
  *                 format: time
@@ -60,24 +56,68 @@ const router = Router();
  *                 type: string
  *                 format: time
  *                 description: The end time of the event.
- *               event_date:
- *                 type: string
- *                 format: date
- *                 description: The date of the event.
- *               event_duration:
+ *               location:
+ *                 type: object
+ *                 description: The location of the event (JSON object).
+ *               instrument_ids:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: uuid
+ *                 description: An array of instrument IDs required for the event.
+ *               duration:
  *                 type: string
  *                 description: The duration of the event (e.g., '2 hours').
- *               location:
- *                 type: string
- *                 description: The location of the event.
- *               payment_amount:
+ *               base_rate:
  *                 type: number
  *                 format: float
- *                 description: The agreed payment amount.
+ *                 description: The base rate for the request.
+ *               duration_hours:
+ *                 type: number
+ *                 format: float
+ *                 description: The duration of the event in hours.
+ *               distance_km:
+ *                 type: number
+ *                 format: float
+ *                 description: The distance to the event in kilometers.
+ *               experience_factor:
+ *                 type: number
+ *                 format: float
+ *                 description: Factor based on musician experience.
+ *               instrument_factor:
+ *                 type: number
+ *                 format: float
+ *                 description: Factor based on instrument rarity/demand.
+ *               system_fee:
+ *                 type: number
+ *                 format: float
+ *                 description: System fee applied to the request.
+ *               total_price:
+ *                 type: number
+ *                 format: float
+ *                 description: The total price of the request.
+ *               extra_amount:
+ *                 type: number
+ *                 format: float
+ *                 description: Any extra amount added to the request.
+ *               is_public:
+ *                 type: boolean
+ *                 description: Whether the request is public or private.
  *               status:
  *                 type: string
- *                 enum: [pending, accepted, rejected, completed, cancelled]
+ *                 enum: [CREATED, PENDING, ACCEPTED, REJECTED, COMPLETED, CANCELLED]
  *                 description: The current status of the request.
+ *               cancelled_by:
+ *                 type: string
+ *                 format: uuid
+ *                 description: The ID of the user who cancelled the request.
+ *               cancellation_reason:
+ *                 type: string
+ *                 description: The reason for cancellation.
+ *               reopened_from_id:
+ *                 type: string
+ *                 format: uuid
+ *                 description: The ID of the request this one was reopened from.
  *     responses:
  *       201:
  *         description: The music request was successfully created.
