@@ -9,6 +9,7 @@ function resolveBaseUrl(): string {
 
   // Try to infer LAN host from Expo hostUri/debuggerHost
   const hostUri = (Constants as any)?.expoConfig?.hostUri || (Constants as any)?.manifest?.debuggerHost;
+  console.log('hostUri:', hostUri);
   if (typeof hostUri === 'string') {
     const host = hostUri.split(':')[0];
     if (host) {

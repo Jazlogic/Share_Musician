@@ -70,6 +70,7 @@ const router = Router();
  *                 type: number
  *                 format: float
  *                 description: The total price of the request.
+ */
 router.post('/', authenticateToken, createRequestController);
 
 /**
