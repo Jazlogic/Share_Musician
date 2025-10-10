@@ -1,6 +1,6 @@
 -- Drop everything and start fresh
-DROP SCHEMA public CASCADE;
-CREATE SCHEMA public;
+-- DROP SCHEMA public CASCADE;
+-- CREATE SCHEMA public;
 
 -- Re-enable basic extensions if needed
 -- Enable UUID generation
