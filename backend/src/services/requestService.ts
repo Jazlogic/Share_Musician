@@ -107,8 +107,8 @@ export const createRequest = async (requestData: RequestData) => {
     }
 
     const requestQuery = `
-      INSERT INTO requests (
-        leader_id,
+      INSERT INTO request (
+        client_id,
         title,
         event_type_id,
         event_date,

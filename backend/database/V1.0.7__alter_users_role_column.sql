@@ -8,7 +8,7 @@ DROP POLICY IF EXISTS "Admins can view all balances" ON user_balances;
 DROP POLICY IF EXISTS "Admins can manage transactions" ON user_transactions;
 DROP POLICY IF EXISTS "Admins can manage admin actions" ON admin_actions;
 DROP POLICY IF EXISTS "Admins can manage pricing config" ON pricing_config;
-DROP POLICY IF EXISTS "Musicians can create offers" ON offers;
+DROP POLICY IF EXISTS "Musicians can create offer" ON offer;
 
 -- Step 1: Rename the existing 'role' column
 ALTER TABLE users RENAME COLUMN role TO old_role;
@@ -76,12 +76,5 @@ CREATE POLICY "Admins can manage pricing config"
     )
   );
 
-CREATE POLICY "Musicians can create offers"
-  ON offers FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE users.user_id = auth.uid()::uuid
-      AND users.role = 'musician'
-    )
-  );
+-- Add RLS policies for the new roles
+CREATE POLICY "Musicians can create offer" ON offer FOR INSERT WITH CHECK (musician_id = auth.uid());

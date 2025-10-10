@@ -7,16 +7,16 @@ const router = Router();
 /**
  * @swagger
  * tags:
- *   name: Requests
+ *   name: Request
  *   description: API for managing music requests
  */
 
 /**
  * @swagger
- * /requests:
+ * /request:
  *   post:
  *     summary: Create a new music request
- *     tags: [Requests]
+ *     tags: [Request]
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -74,10 +74,10 @@ router.post('/', authenticateToken, createRequestController);
 
 /**
  * @swagger
- * /requests/created:
+ * /request/created:
  *   get:
  *     summary: Get music requests with 'CREATED' status, visible to all musicians and to the leaders who created them.
- *     tags: [Requests]
+ *     tags: [Request]
  *     security:
  *       - BearerAuth: []
  *     responses:

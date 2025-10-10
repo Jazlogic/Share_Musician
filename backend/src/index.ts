@@ -152,7 +152,7 @@ app.use('/churches', churchRoutes);
 app.use('/users', userRoutes);
 app.use('/storage', storageRoutes);
 app.use('/posts', postRoutes); // Use the new post routes
-app.use('/requests', requestRoutes);
+app.use('/request', requestRoutes);
 app.use('/event-types', eventTypeRoutes);
 app.use('/instruments', instrumentRoutes);
 app.use('/request-statuses', requestStatusRoutes);

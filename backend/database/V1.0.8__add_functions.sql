@@ -11,7 +11,7 @@ $$ LANGUAGE plpgsql; -- Especifica que la función está escrita en PL/pgSQL, el
 
 -- Función: calculate_request_price()
 -- Propósito: Calcula el precio total de una solicitud de evento, incluyendo tarifas base, duración, factores y comisiones.
--- Uso: Se utiliza como un TRIGGER BEFORE INSERT en la tabla 'requests' para establecer los valores de precio antes de que se guarde la solicitud.
+-- Uso: Se utiliza como un TRIGGER BEFORE INSERT en la tabla 'request' para establecer los valores de precio antes de que se guarde la solicitud.
 CREATE OR REPLACE FUNCTION calculate_request_price()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -50,7 +50,7 @@ BEGIN
   NEW.system_fee := fee;
   NEW.total_price := total + fee; -- El precio final es el total más la comisión del sistema.
 
-  RETURN NEW; -- Retorna el nuevo registro modificado para que se inserte en la tabla 'requests'.
+  RETURN NEW; -- Retorna el nuevo registro modificado para que se inserte en la tabla 'request'.
 END;
 $$ LANGUAGE plpgsql;
 
@@ -340,7 +340,7 @@ BEGIN
         'request',
         'Nueva Solicitud de Evento',
         'Hay una nueva solicitud de evento disponible que coincide con tu perfil.',
-        '/requests/' || NEW.id
+        '/request/' || NEW.id
       );
     END IF;
   END LOOP;
@@ -351,16 +351,16 @@ $$ LANGUAGE plpgsql;
 
 -- Función: notify_leader_new_offer()
 -- Propósito: Notifica al líder de una solicitud cuando un músico hace una oferta.
--- Uso: Se utiliza como un TRIGGER AFTER INSERT en la tabla 'offers'.
+-- Uso: Se utiliza como un TRIGGER AFTER INSERT en la tabla 'offer'.
 CREATE OR REPLACE FUNCTION notify_leader_new_offer()
 RETURNS TRIGGER AS $$
 DECLARE
-  leader_id UUID; -- ID del líder de la solicitud.
+  client_id UUID; -- ID del cliente de la solicitud.
   musician_name VARCHAR(255); -- Nombre del músico que hizo la oferta.
 BEGIN
   -- Obtiene el ID del líder de la solicitud asociada a la nueva oferta.
-  SELECT user_id INTO leader_id
-  FROM requests
+  SELECT client_id INTO client_id
+  FROM request
   WHERE id = NEW.request_id;
 
   -- Obtiene el nombre del músico que hizo la oferta.
@@ -370,11 +370,11 @@ BEGIN
 
   -- Crea una notificación para el líder de la solicitud.
   PERFORM create_notification(
-    leader_id,
+    client_id,
     'offer',
     'Nueva Oferta Recibida',
     'El músico ' || musician_name || ' ha hecho una oferta para tu solicitud.',
-    '/requests/' || NEW.request_id
+    '/request/' || NEW.request_id
   );
 
   RETURN NEW; -- Retorna el nuevo registro de la oferta.
@@ -383,7 +383,7 @@ $$ LANGUAGE plpgsql; -- Especifica que la función está escrita en PL/pgSQL.
 
 -- Función: notify_musician_offer_selected()
 -- Propósito: Notifica a un músico cuando su oferta ha sido seleccionada para una solicitud.
--- Uso: Se utiliza como un TRIGGER AFTER UPDATE en la tabla 'offers' cuando el estado cambia a 'accepted'.
+-- Uso: Se utiliza como un TRIGGER AFTER UPDATE en la tabla 'offer' cuando el estado cambia a 'accepted'.
 CREATE OR REPLACE FUNCTION notify_musician_offer_selected()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -393,7 +393,7 @@ BEGIN
   IF NEW.status = 'accepted' AND OLD.status IS DISTINCT FROM 'accepted' THEN
     -- Obtiene el título de la solicitud asociada.
     SELECT title INTO request_title
-    FROM requests
+    FROM request
     WHERE id = NEW.request_id;
 
     -- Crea una notificación para el músico cuya oferta fue seleccionada.
@@ -402,7 +402,7 @@ BEGIN
       'offer_accepted',
       '¡Tu Oferta Ha Sido Aceptada!',
       'Tu oferta para la solicitud ' || request_title || ' ha sido seleccionada.',
-      '/offers/' || NEW.id
+      '/offer/' || NEW.id
     );
   END IF;
 
@@ -412,7 +412,7 @@ $$ LANGUAGE plpgsql; -- Especifica que la función está escrita en PL/pgSQL.
 
 -- Función: notify_event_status_change()
 -- Propósito: Notifica al líder y al músico cuando el estado de una solicitud cambia a IN_PROGRESS.
--- Uso: Se utiliza como un TRIGGER AFTER UPDATE en la tabla 'requests'.
+-- Uso: Se utiliza como un TRIGGER AFTER UPDATE en la tabla 'request'.
 CREATE OR REPLACE FUNCTION notify_event_status_change()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -425,12 +425,12 @@ BEGIN
   IF NEW.status = 'IN_PROGRESS' AND OLD.status IS DISTINCT FROM 'IN_PROGRESS' THEN
     -- Obtener el ID del músico de la oferta aceptada para esta solicitud
     SELECT musician_id INTO musician_id_val
-    FROM offers
+    FROM offer
     WHERE request_id = NEW.id AND status = 'ACCEPTED'
     LIMIT 1;
 
     -- Obtener nombres del líder y del músico
-    SELECT name INTO leader_name FROM users WHERE id = NEW.leader_id;
+    SELECT name INTO leader_name FROM users WHERE id = NEW.client_id;
     SELECT name INTO musician_name FROM users WHERE id = musician_id_val;
 
     -- Formatear la fecha del evento
@@ -438,11 +438,11 @@ BEGIN
 
     -- Notificar al líder
     PERFORM create_notification(
-      NEW.leader_id,
+      NEW.client_id,
       'request_update',
       'Evento en Progreso: ' || event_date_str,
       'Tu solicitud para el evento del ' || event_date_str || ' con ' || musician_name || ' ha comenzado.',
-      '/requests/' || NEW.id
+      '/request/' || NEW.id
     );
 
     -- Notificar al músico
@@ -451,7 +451,7 @@ BEGIN
       'request_update',
       'Evento en Progreso: ' || event_date_str,
       'El evento del ' || event_date_str || ' con ' || leader_name || ' ha comenzado.',
-      '/requests/' || NEW.id
+      '/request/' || NEW.id
     );
   END IF;
 
@@ -467,31 +467,31 @@ CREATE OR REPLACE FUNCTION send_event_reminder(
 ) RETURNS VOID AS $$
 DECLARE
   musician_id_val UUID;
-  leader_id_val UUID;
+  client_id_val UUID;
   leader_name VARCHAR(255);
   musician_name VARCHAR(255);
   event_date_val TIMESTAMP WITH TIME ZONE;
   event_date_str TEXT;
 BEGIN
   -- Obtener detalles de la solicitud
-  SELECT leader_id, event_date
-  INTO leader_id_val, event_date_val
-  FROM requests
+  SELECT client_id, event_date
+  INTO client_id_val, event_date_val
+  FROM request
   WHERE id = p_request_id;
 
   -- Obtener el ID del músico de la oferta aceptada para esta solicitud
   SELECT musician_id INTO musician_id_val
-  FROM offers
+  FROM offer
   WHERE request_id = p_request_id AND status = 'ACCEPTED'
   LIMIT 1;
 
   -- Si no se encuentra la solicitud o el músico, salir
-  IF leader_id_val IS NULL OR musician_id_val IS NULL THEN
+  IF client_id_val IS NULL OR musician_id_val IS NULL THEN
     RETURN;
   END IF;
 
   -- Obtener nombres del líder y del músico
-  SELECT name INTO leader_name FROM users WHERE id = leader_id_val;
+  SELECT name INTO leader_name FROM users WHERE id = client_id_val;
   SELECT name INTO musician_name FROM users WHERE id = musician_id_val;
 
   -- Formatear la fecha del evento
@@ -499,7 +499,7 @@ BEGIN
 
   -- Notificar al líder
   PERFORM create_notification(
-    leader_id_val,
+    client_id_val,
     'event_reminder',
     'Recordatorio: Evento Próximo - ' || event_date_str,
     'Tu evento con ' || musician_name || ' comienza en 10 minutos.',
@@ -512,7 +512,7 @@ BEGIN
     'event_reminder',
     'Recordatorio: Evento Próximo - ' || event_date_str,
     'Tu evento con ' || leader_name || ' comienza en 10 minutos.',
-    '/requests/' || p_request_id
+    '/request/' || p_request_id
   );
 END;
 $$ LANGUAGE plpgsql;

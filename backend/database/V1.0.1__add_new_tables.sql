@@ -151,60 +151,85 @@ COMMENT ON COLUMN pricing_config.is_active IS 'Indica si esta configuración de 
 COMMENT ON COLUMN pricing_config.created_at IS 'Marca de tiempo de creación del registro.';
 COMMENT ON COLUMN pricing_config.updated_at IS 'Marca de tiempo de la última actualización del registro.';
 
--- REQUESTS
+-- REQUESTS (solicitudes de músicos)
+-- Tabla comentada para actualizar estructura de request (init.sql). Fecha: 2024-10-23
+/*
+DROP TABLE IF EXISTS request;
 CREATE TABLE IF NOT EXISTS requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  leader_id UUID NOT NULL,
+  client_id UUID NOT NULL,
   event_type_id UUID NOT NULL,
-  event_date TIMESTAMP WITH TIME ZONE NOT NULL, -- fecha y hora del evento
-  start_time TIME, -- hora de inicio (opcional si event_date ya incluye la hora)
-  end_time TIME,
-  duration INTERVAL, -- duración estimada
-  location JSONB NOT NULL, -- { city, address, lat, lng }
-  base_rate NUMERIC(12,2),
-  duration_hours NUMERIC(6,2),
-  distance_km NUMERIC(8,2),
-  experience_factor NUMERIC(4,2) DEFAULT 1,
-  instrument_factor NUMERIC(4,2) DEFAULT 1,
+  event_date DATE NOT NULL,
+  start_time TIME WITH TIME ZONE NOT NULL,
+  end_time TIME WITH TIME ZONE NOT NULL,
+  duration INTERVAL,
+  location TEXT NOT NULL,
+  base_rate NUMERIC(12,2) NOT NULL,
+  duration_hours NUMERIC(5,2),
+  distance_km NUMERIC(10,2),
+  experience_factor NUMERIC(3,2),
+  instrument_factor NUMERIC(3,2),
   system_fee NUMERIC(12,2),
   total_price NUMERIC(12,2),
-  extra_amount NUMERIC(10,2) DEFAULT 0 CHECK (extra_amount >= 0), -- monto adicional sugerido
+  extra_amount NUMERIC(12,2) DEFAULT 0,
   description TEXT,
   is_public BOOLEAN DEFAULT TRUE,
   status request_status NOT NULL DEFAULT 'CREATED',
-  cancelled_by VARCHAR(20), -- 'leader' | 'musician' | 'system' (para trazabilidad)
+  cancelled_by user_role,
   cancellation_reason TEXT,
   reopened_from_id UUID,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+*/
 
+-- Comandos ALTER para completar tabla request (init.sql)
+ALTER TABLE request ADD COLUMN IF NOT EXISTS event_type_id UUID;
+ALTER TABLE request ADD COLUMN IF NOT EXISTS start_time TIME WITH TIME ZONE;
+ALTER TABLE request ADD COLUMN IF NOT EXISTS end_time TIME WITH TIME ZONE;
+ALTER TABLE request ADD COLUMN IF NOT EXISTS duration INTERVAL;
+ALTER TABLE request ADD COLUMN IF NOT EXISTS base_rate NUMERIC(12,2);
+ALTER TABLE request ADD COLUMN IF NOT EXISTS duration_hours NUMERIC(5,2);
+ALTER TABLE request ADD COLUMN IF NOT EXISTS distance_km NUMERIC(10,2);
+ALTER TABLE request ADD COLUMN IF NOT EXISTS experience_factor NUMERIC(3,2);
+ALTER TABLE request ADD COLUMN IF NOT EXISTS instrument_factor NUMERIC(3,2);
+ALTER TABLE request ADD COLUMN IF NOT EXISTS system_fee NUMERIC(12,2);
+ALTER TABLE request ADD COLUMN IF NOT EXISTS total_price NUMERIC(12,2);
+ALTER TABLE request ADD COLUMN IF NOT EXISTS extra_amount NUMERIC(12,2) DEFAULT 0;
+ALTER TABLE request ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE request ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT TRUE;
+ALTER TABLE request ADD COLUMN IF NOT EXISTS cancelled_by user_role;
+ALTER TABLE request ADD COLUMN IF NOT EXISTS cancellation_reason TEXT;
+ALTER TABLE request ADD COLUMN IF NOT EXISTS reopened_from_id UUID;
 
-COMMENT ON TABLE requests IS 'Solicitudes musicales creadas por líderes/clientes. Puede vincular varios instrumentos mediante request_instruments.';
-COMMENT ON COLUMN requests.id IS 'Identificador único de la solicitud.';
-COMMENT ON COLUMN requests.leader_id IS 'ID del líder que crea la solicitud.';
-COMMENT ON COLUMN requests.event_type_id IS 'ID del tipo de evento.';
-COMMENT ON COLUMN requests.event_date IS 'Fecha y hora del evento.';
-COMMENT ON COLUMN requests.start_time IS 'Hora de inicio del evento.';
-COMMENT ON COLUMN requests.end_time IS 'Hora de finalización del evento.';
-COMMENT ON COLUMN requests.duration IS 'Duración estimada del evento.';
-COMMENT ON COLUMN requests.location IS 'Ubicación del evento (ciudad, dirección, lat/lng).';
-COMMENT ON COLUMN requests.base_rate IS 'Tarifa base calculada para la solicitud.';
-COMMENT ON COLUMN requests.duration_hours IS 'Duración del evento en horas.';
-COMMENT ON COLUMN requests.distance_km IS 'Distancia en kilómetros al lugar del evento.';
-COMMENT ON COLUMN requests.experience_factor IS 'Factor de experiencia aplicado al cálculo del precio.';
-COMMENT ON COLUMN requests.instrument_factor IS 'Factor de instrumento aplicado al cálculo del precio.';
-COMMENT ON COLUMN requests.system_fee IS 'Comisión de la plataforma.';
-COMMENT ON COLUMN requests.total_price IS 'Precio total que verá el cliente como coste final del servicio.';
-COMMENT ON COLUMN requests.extra_amount IS 'Monto adicional sugerido por el líder.';
-COMMENT ON COLUMN requests.description IS 'Descripción detallada de la solicitud.';
-COMMENT ON COLUMN requests.is_public IS 'Indica si la solicitud es pública o privada.';
-COMMENT ON COLUMN requests.status IS 'Estado actual de la solicitud (ej. CREATED, OFFER_RECEIVED, IN_PROGRESS).';
-COMMENT ON COLUMN requests.cancelled_by IS 'Indica quién canceló la solicitud (leader, musician, system).';
-COMMENT ON COLUMN requests.cancellation_reason IS 'Razón de la cancelación.';
-COMMENT ON COLUMN requests.reopened_from_id IS 'ID de la solicitud original si esta fue reabierta.';
-COMMENT ON COLUMN requests.created_at IS 'Marca de tiempo de creación del registro.';
-COMMENT ON COLUMN requests.updated_at IS 'Marca de tiempo de la última actualización del registro.';
+COMMENT ON TABLE request IS 'Solicitudes musicales creadas por líderes/clientes. Puede vincular varios instrumentos mediante request_instruments.';
+COMMENT ON COLUMN request.id IS 'Identificador único de la solicitud.';
+COMMENT ON COLUMN request.client_id IS 'ID del cliente que crea la solicitud.';
+COMMENT ON COLUMN request.event_type_id IS 'ID del tipo de evento.';
+COMMENT ON COLUMN request.event_date IS 'Fecha y hora del evento.';
+COMMENT ON COLUMN request.start_time IS 'Hora de inicio del evento.';
+COMMENT ON COLUMN request.end_time IS 'Hora de finalización del evento.';
+COMMENT ON COLUMN request.duration IS 'Duración estimada del evento.';
+COMMENT ON COLUMN request.location IS 'Ubicación del evento (ciudad, dirección, lat/lng).';
+COMMENT ON COLUMN request.base_rate IS 'Tarifa base calculada para la solicitud.';
+COMMENT ON COLUMN request.duration_hours IS 'Duración del evento en horas.';
+COMMENT ON COLUMN request.distance_km IS 'Distancia en kilómetros al lugar del evento.';
+COMMENT ON COLUMN request.experience_factor IS 'Factor de experiencia aplicado al cálculo del precio.';
+COMMENT ON COLUMN request.instrument_factor IS 'Factor de instrumento aplicado al cálculo del precio.';
+COMMENT ON COLUMN request.system_fee IS 'Comisión de la plataforma.';
+COMMENT ON COLUMN request.total_price IS 'Precio total que verá el cliente como coste final del servicio.';
+COMMENT ON COLUMN request.extra_amount IS 'Monto adicional sugerido por el líder.';
+COMMENT ON COLUMN request.description IS 'Descripción detallada de la solicitud.';
+COMMENT ON COLUMN request.is_public IS 'Indica si la solicitud es pública o privada.';
+COMMENT ON COLUMN request.status IS 'Estado actual de la solicitud (ej. CREATED, OFFER_RECEIVED, IN_PROGRESS).';
+COMMENT ON COLUMN request.cancelled_by IS 'Indica quién canceló la solicitud (leader, musician, system).';
+COMMENT ON COLUMN request.cancellation_reason IS 'Razón de la cancelación.';
+COMMENT ON COLUMN request.reopened_from_id IS 'ID de la solicitud original si esta fue reabierta.';
+COMMENT ON COLUMN request.created_at IS 'Marca de tiempo de creación del registro.';
+COMMENT ON COLUMN request.updated_at IS 'Marca de tiempo de la última actualización del registro.';
+
+ALTER TABLE request ADD CONSTRAINT fk_requests_client_id FOREIGN KEY (client_id) REFERENCES users(user_id) ON DELETE CASCADE;
+ALTER TABLE request ADD CONSTRAINT fk_requests_event_type_id FOREIGN KEY (event_type_id) REFERENCES event_types(id) ON DELETE CASCADE;
 
 -- REQUEST STATUS HISTORY (trazabilidad de cambios)
 CREATE TABLE IF NOT EXISTS request_status_history (
@@ -343,30 +368,29 @@ COMMENT ON COLUMN admin_actions.reason IS 'Razón o justificación de la acción
 COMMENT ON COLUMN admin_actions.created_at IS 'Marca de tiempo de creación del registro.';
 
 -- OFFERS (propuestas de músicos)
-DROP TABLE IF EXISTS offer;
-CREATE TABLE IF NOT EXISTS offers (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  request_id UUID NOT NULL,
-  musician_id UUID NOT NULL,
-  message TEXT,
-  proposed_price NUMERIC(12,2) NOT NULL CHECK (proposed_price >= 0),
-  availability_confirmed BOOLEAN DEFAULT FALSE,
-  status offer_status NOT NULL DEFAULT 'SENT',
-  selected_at TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- CREATE TABLE IF NOT EXISTS offer (
+--     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+--     request_id UUID NOT NULL REFERENCES request(id) ON DELETE CASCADE,
+--     musician_id UUID NOT NULL REFERENCES musician_profiles(id) ON DELETE CASCADE,
+--     proposed_price NUMERIC(10, 2) NOT NULL,
+--     message TEXT,
+--     availability_confirmed BOOLEAN DEFAULT FALSE,
+--     status offer_status DEFAULT 'SENT',
+--     selected_at TIMESTAMP WITH TIME ZONE,
+--     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- );
 
-COMMENT ON TABLE offers IS 'Ofertas enviadas por músicos para cubrir una solicitud.';
-COMMENT ON COLUMN offers.id IS 'Identificador único de la oferta.';
-COMMENT ON COLUMN offers.request_id IS 'ID de la solicitud a la que se refiere la oferta.';
-COMMENT ON COLUMN offers.musician_id IS 'ID del músico que realiza la oferta.';
-COMMENT ON COLUMN offers.proposed_price IS 'Precio propuesto por el músico para el servicio.';
-COMMENT ON COLUMN offers.availability_confirmed IS 'Indica si el músico ha confirmado su disponibilidad.';
-COMMENT ON COLUMN offers.status IS 'Estado actual de la oferta (ej. SENT, ACCEPTED, REJECTED).';
-COMMENT ON COLUMN offers.selected_at IS 'Marca de tiempo cuando la oferta fue seleccionada/aceptada.';
-COMMENT ON COLUMN offers.created_at IS 'Marca de tiempo de creación del registro.';
-COMMENT ON COLUMN offers.updated_at IS 'Marca de tiempo de la última actualización del registro.';
+-- COMMENT ON TABLE offer IS 'Ofertas enviadas por músicos para cubrir una solicitud.';
+-- COMMENT ON COLUMN offer.id IS 'Identificador único de la oferta.';
+-- COMMENT ON COLUMN offer.request_id IS 'ID de la solicitud a la que se refiere la oferta.';
+-- COMMENT ON COLUMN offer.musician_id IS 'ID del músico que realiza la oferta.';
+-- COMMENT ON COLUMN offer.proposed_price IS 'Precio propuesto por el músico para el servicio.';
+-- COMMENT ON COLUMN offer.availability_confirmed IS 'Indica si el músico ha confirmado su disponibilidad.';
+-- COMMENT ON COLUMN offer.status IS 'Estado actual de la oferta (ej. SENT, ACCEPTED, REJECTED).';
+-- COMMENT ON COLUMN offer.selected_at IS 'Marca de tiempo cuando la oferta fue seleccionada/aceptada.';
+-- COMMENT ON COLUMN offer.created_at IS 'Marca de tiempo de creación del registro.';
+-- COMMENT ON COLUMN offer.updated_at IS 'Marca de tiempo de la última actualización del registro.';
 
 -- REQUEST INSTRUMENTS (instrumentos requeridos para una solicitud)
 CREATE TABLE IF NOT EXISTS request_instruments (
@@ -374,7 +398,7 @@ CREATE TABLE IF NOT EXISTS request_instruments (
   instrument_id UUID NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   PRIMARY KEY (request_id, instrument_id),
-  CONSTRAINT fk_request_instruments_request FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE CASCADE,
+  CONSTRAINT fk_request_instruments_request FOREIGN KEY (request_id) REFERENCES request(id) ON DELETE CASCADE,
   CONSTRAINT fk_request_instruments_instrument FOREIGN KEY (instrument_id) REFERENCES instruments(id) ON DELETE CASCADE
 );
 

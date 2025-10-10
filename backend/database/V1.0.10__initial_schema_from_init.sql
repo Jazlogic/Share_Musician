@@ -1,16 +1,3 @@
--- Drop everything and start fresh
-DROP SCHEMA public CASCADE;
-CREATE SCHEMA public;
-
--- Re-enable basic extensions if needed
--- Enable UUID generation
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- Enable pgcrypto for secure password hashing
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
--- Your new schema will go here
-
 -- Tabla para Iglesias
 CREATE TABLE IF NOT EXISTS churches (
     churches_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -19,7 +6,6 @@ CREATE TABLE IF NOT EXISTS churches (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-select * from churches;
 
 -- Tabla para Usuarios (normalizada)
 CREATE TABLE IF NOT EXISTS users (
@@ -43,9 +29,6 @@ CREATE TABLE IF NOT EXISTS users (
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_expires_at TIMESTAMP WITH TIME ZONE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token_expires_at TIMESTAMP WITH TIME ZONE;
-select * from users;
-
-delete from users where email = 'astaciosanchezjefryagustin@gmail.com';
 
 -- Tabla para el historial de imágenes de perfil
 CREATE TABLE IF NOT EXISTS user_profile_image_history (
@@ -55,9 +38,6 @@ CREATE TABLE IF NOT EXISTS user_profile_image_history (
     uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 
 );
-select * from user_profile_image_history;
-
-drop table user_profile_image_history;
 
 -- User passwords table (separate for security)
 CREATE TABLE IF NOT EXISTS user_passwords (
@@ -70,19 +50,6 @@ CREATE TABLE IF NOT EXISTS user_passwords (
 -- Create index for better performance
 CREATE INDEX IF NOT EXISTS idx_user_passwords_user_id ON user_passwords(user_id);
 
--- Enable Row Level Security (RLS)
-ALTER TABLE user_passwords ENABLE ROW LEVEL SECURITY;
-
--- Users can read their own password
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can read own password' AND tablename = 'user_passwords') THEN
-        CREATE POLICY "Users can read own password" ON user_passwords
-            FOR SELECT USING (auth.uid()::text = user_id::text);
-    END IF;
-END
-$$;
-
 -- Tabla para verificaciones de correo electrónico
 CREATE TABLE IF NOT EXISTS email_verifications (
     verification_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -94,16 +61,6 @@ CREATE TABLE IF NOT EXISTS email_verifications (
     verified BOOLEAN DEFAULT FALSE
 );
 
-ALTER TABLE email_verifications ENABLE ROW LEVEL SECURITY;
-
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow all for email_verifications' AND tablename = 'email_verifications') THEN
-        CREATE POLICY "Allow all for email_verifications" ON email_verifications USING (true) WITH CHECK (true);
-    END IF;
-END
-$$;
-
 -- Tabla para Publicaciones (Posts)
 CREATE TABLE IF NOT EXISTS posts (
     post_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -114,46 +71,10 @@ CREATE TABLE IF NOT EXISTS posts (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-select * from posts;
-
--- Tabla para Solicitudes de Música (Requests)
--- ==============================
--- ENUMS
--- ==============================
-CREATE TYPE request_status AS ENUM (
-  'CREATED',
-  'WAITING_OFFER',
-  'OFFER_RECEIVED',
-  'OFFER_ACCEPTED',
-  'CONFIRMED',
-  'IN_PROGRESS',
-  'COMPLETED',
-  'CANCELED_BY_CLIENT',
-  'CANCELED_BY_MUSICIAN',
-  'REOPENED',
-  'REJECTED',
-  'EXPIRED',
-  'IN_DISPUTE',
-  'ARCHIVED'
-);
-
-CREATE TYPE offer_status AS ENUM (
-  'SENT',
-  'ACCEPTED',
-  'REJECTED',
-  'WITHDRAWN'
-);
-
-CREATE TYPE user_type AS ENUM (
-  'leader',
-  'musician',
-  'admin'
-);
-
 -- ==============================
 -- TABLA PRINCIPAL: SOLICITUD
 -- ==============================
-CREATE TABLE request (
+CREATE TABLE IF NOT EXISTS request (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   client_id UUID NOT NULL,
   musician_id UUID,
@@ -187,7 +108,7 @@ CREATE TABLE request (
 -- ==============================
 -- TABLA DE OFERTAS
 -- ==============================
-CREATE TABLE offer (
+CREATE TABLE IF NOT EXISTS offer (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   request_id UUID NOT NULL,
   musician_id UUID NOT NULL,
@@ -200,13 +121,10 @@ CREATE TABLE offer (
   CONSTRAINT fk_offer_musician FOREIGN KEY (musician_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- RLS for offers table
-ALTER TABLE offer ENABLE ROW LEVEL SECURITY;
-
 -- ==============================
 -- TABLA DE HISTORIAL DE ESTADOS
 -- ==============================
-CREATE TABLE request_history (
+CREATE TABLE IF NOT EXISTS request_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   request_id UUID NOT NULL,
   old_status request_status,
@@ -221,7 +139,7 @@ CREATE TABLE request_history (
 -- ==============================
 -- MÉTRICAS DE CLIENTES Y MÚSICOS
 -- ==============================
-CREATE TABLE musician_metrics (
+CREATE TABLE IF NOT EXISTS musician_metrics (
   musician_id UUID PRIMARY KEY,
   total_canceled_by_musician INT DEFAULT 0,
   total_completed INT DEFAULT 0,
@@ -233,7 +151,7 @@ CREATE TABLE musician_metrics (
   CONSTRAINT fk_musician_metrics FOREIGN KEY (musician_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
-CREATE TABLE client_metrics (
+CREATE TABLE IF NOT EXISTS client_metrics (
   client_id UUID PRIMARY KEY,
   total_canceled_by_client INT DEFAULT 0,
   total_completed INT DEFAULT 0,
@@ -245,51 +163,3 @@ CREATE TABLE client_metrics (
   updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
   CONSTRAINT fk_client_metrics FOREIGN KEY (client_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
-
--- ==============================
--- ÍNDICES
--- ==============================
-CREATE INDEX idx_request_client_id ON request (client_id);
-CREATE INDEX idx_request_musician_id ON request (musician_id);
-CREATE INDEX idx_request_status ON request (status);
-CREATE INDEX idx_request_creation_date ON request (created_at);
-CREATE INDEX idx_request_event_date ON request (event_date);
-
-CREATE INDEX idx_offer_request_id ON offer (request_id);
-CREATE INDEX idx_offer_musician_id ON offer (musician_id);
-CREATE INDEX idx_offer_status ON offer (status);
-
-CREATE INDEX idx_request_history_request_id ON request_history (request_id);
-CREATE INDEX idx_request_history_user_id ON request_history (user_id);
-CREATE INDEX idx_request_history_change_date ON request_history (change_date);
-
--- ==============================
--- TRIGGER DE ACTUALIZACIÓN DE FECHA
--- ==============================
-CREATE OR REPLACE FUNCTION update_request_timestamp()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_update_request_timestamp
-BEFORE UPDATE ON request
-FOR EACH ROW
-EXECUTE FUNCTION update_request_timestamp();
-
-
-select * from request;
-
-select * from users;
-
-CREATE POLICY "Musicians can create offer" ON offer FOR INSERT WITH CHECK (musician_id = auth.uid());
-
-CREATE POLICY "Musicians can view their own offer" ON offer FOR SELECT USING (musician_id = auth.uid());
-
-CREATE POLICY "Clients can view offer for their requests" ON offer FOR SELECT USING (request_id IN (SELECT id FROM request WHERE client_id = auth.uid()));
-
-CREATE POLICY "Musicians can update their own offer" ON offer FOR UPDATE USING (musician_id = auth.uid());
-
-CREATE POLICY "Musicians can delete their own offer" ON offer FOR DELETE USING (musician_id = auth.uid());
