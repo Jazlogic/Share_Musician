@@ -1,8 +1,8 @@
 -- ===============================================
--- 🚀 MIGRACIÓN: Soporte Multirol para Usuarios
+-- MIGRACIÓN: Soporte Multirol para Usuarios
 -- ===============================================
 
--- 1️⃣ Crear nueva tabla user_roles (si no existe)
+-- 1 Crear nueva tabla user_roles (si no existe)
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_roles') THEN
@@ -20,7 +20,7 @@ $$;
 COMMENT ON TABLE user_roles IS 'Tabla intermedia que permite asignar múltiples roles a un mismo usuario. Ej: un músico también puede ser cliente.';
 
 
--- 2️⃣ Migrar roles actuales desde la tabla users (si tenía un campo role)
+-- 2 Migrar roles actuales desde la tabla users (si tenía un campo role)
 INSERT INTO user_roles (user_id, role)
 SELECT user_id, role::user_role
 FROM users
@@ -33,14 +33,14 @@ WHERE role IS NOT NULL
 COMMENT ON COLUMN users.role IS 'Rol principal del usuario. Los roles adicionales se almacenan en user_roles.';
 
 
--- 3️⃣ Actualizar políticas RLS de la tabla "request"
+-- 3 Actualizar políticas RLS de la tabla "request"
 -- -----------------------------------------------
 
 -- Eliminar políticas viejas relacionadas con creación de solicitudes
 DROP POLICY IF EXISTS "Musicians can create request" ON request;
 DROP POLICY IF EXISTS "Leaders can manage own request" ON request;
 
--- ✅ Nueva política: permitir crear solicitudes a usuarios que tengan rol de client o musician
+--  Nueva política: permitir crear solicitudes a usuarios que tengan rol de client o musician
 CREATE POLICY "Users with client or musician role can create requests"
   ON request FOR INSERT
   WITH CHECK (
@@ -52,13 +52,13 @@ CREATE POLICY "Users with client or musician role can create requests"
     )
   );
 
--- ✅ Nueva política: permitir gestionar sus propias solicitudes (lectura, edición, cancelación)
+--  Nueva política: permitir gestionar sus propias solicitudes (lectura, edición, cancelación)
 CREATE POLICY "Users can manage their own requests"
   ON request FOR ALL
   USING (auth.uid() = client_id);
 
 
--- 4️⃣ (Opcional) Política de lectura pública
+-- 4 (Opcional) Política de lectura pública
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public can read active requests' AND tablename = 'request') THEN
@@ -70,14 +70,14 @@ END
 $$;
 
 
--- 5️⃣ Ajuste opcional para endpoint de autenticación (si usas Supabase)
+-- 5 Ajuste opcional para endpoint de autenticación (si usas Supabase)
 -- Permitir a nuevos usuarios registrar múltiples roles desde el inicio
 COMMENT ON POLICY "Users with client or musician role can create requests" ON request IS
   'Permite a músicos y clientes crear solicitudes de contratación sin duplicar cuentas.';
 
 
 -- ===============================================
--- ✅ FIN DE MIGRACIÓN
+-- FIN DE MIGRACIÓN
 -- ===============================================
 -- Resultado:
 --  - Ahora los usuarios pueden tener múltiples roles (client, musician, leader, admin)
