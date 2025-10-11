@@ -151,37 +151,6 @@ COMMENT ON COLUMN pricing_config.is_active IS 'Indica si esta configuración de 
 COMMENT ON COLUMN pricing_config.created_at IS 'Marca de tiempo de creación del registro.';
 COMMENT ON COLUMN pricing_config.updated_at IS 'Marca de tiempo de la última actualización del registro.';
 
--- SOLICITUDES (solicitudes de músicos)
--- Tabla comentada para actualizar estructura de solicitud (init.sql). Fecha: 2025-10-10 
-/*
-DROP TABLE IF EXISTS request;
-CREATE TABLE IF NOT EXISTS requests (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  client_id UUID NOT NULL,
-  event_type_id UUID NOT NULL,
-  event_date DATE NOT NULL,
-  start_time TIME WITH TIME ZONE NOT NULL,
-  end_time TIME WITH TIME ZONE NOT NULL,
-  duration INTERVAL,
-  location TEXT NOT NULL,
-  base_rate NUMERIC(12,2) NOT NULL,
-  duration_hours NUMERIC(5,2),
-  distance_km NUMERIC(10,2),
-  experience_factor NUMERIC(3,2),
-  instrument_factor NUMERIC(3,2),
-  system_fee NUMERIC(12,2),
-  total_price NUMERIC(12,2),
-  extra_amount NUMERIC(12,2) DEFAULT 0,
-  description TEXT,
-  is_public BOOLEAN DEFAULT TRUE,
-  status request_status NOT NULL DEFAULT 'CREATED',
-  cancelled_by user_role,
-  cancellation_reason TEXT,
-  reopened_from_id UUID,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-*/
 
 -- Comandos ALTER para completar tabla solicitud (init.sql)
 ALTER TABLE request ADD COLUMN IF NOT EXISTS event_type_id UUID;
@@ -228,8 +197,21 @@ COMMENT ON COLUMN request.reopened_from_id IS 'ID de la solicitud original si es
 COMMENT ON COLUMN request.created_at IS 'Marca de tiempo de creación del registro.';
 COMMENT ON COLUMN request.updated_at IS 'Marca de tiempo de la última actualización del registro.';
 
-ALTER TABLE request ADD CONSTRAINT fk_requests_client_id FOREIGN KEY (client_id) REFERENCES users(user_id) ON DELETE CASCADE;
-ALTER TABLE request ADD CONSTRAINT fk_requests_event_type_id FOREIGN KEY (event_type_id) REFERENCES event_types(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_requests_client_id') THEN
+        ALTER TABLE request ADD CONSTRAINT fk_requests_client_id FOREIGN KEY (client_id) REFERENCES users(user_id) ON DELETE CASCADE;
+    END IF;
+END
+$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_requests_event_type_id') THEN
+        ALTER TABLE request ADD CONSTRAINT fk_requests_event_type_id FOREIGN KEY (event_type_id) REFERENCES event_types(id) ON DELETE CASCADE;
+    END IF;
+END
+$$;
 
 -- HISTORIAL DE ESTADO DE SOLICITUD (trazabilidad de cambios)
 CREATE TABLE IF NOT EXISTS request_status_history (
@@ -367,42 +349,15 @@ COMMENT ON COLUMN admin_actions.action IS 'Tipo de acción realizada (ej. BLOCK_
 COMMENT ON COLUMN admin_actions.reason IS 'Razón o justificación de la acción.';
 COMMENT ON COLUMN admin_actions.created_at IS 'Marca de tiempo de creación del registro.';
 
--- OFERTAS (propuestas de músicos)
--- CREATE TABLE IF NOT EXISTS offer (
---     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
---     request_id UUID NOT NULL REFERENCES request(id) ON DELETE CASCADE,
---     musician_id UUID NOT NULL REFERENCES musician_profiles(id) ON DELETE CASCADE,
---     proposed_price NUMERIC(10, 2) NOT NULL,
---     message TEXT,
---     availability_confirmed BOOLEAN DEFAULT FALSE,
---     status offer_status DEFAULT 'SENT',
---     selected_at TIMESTAMP WITH TIME ZONE,
---     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
---     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
--- );
-
--- COMMENT ON TABLE offer IS 'Ofertas enviadas por músicos para cubrir una solicitud.';
--- COMMENT ON COLUMN offer.id IS 'Identificador único de la oferta.';
--- COMMENT ON COLUMN offer.request_id IS 'ID de la solicitud a la que se refiere la oferta.';
--- COMMENT ON COLUMN offer.musician_id IS 'ID del músico que realiza la oferta.';
--- COMMENT ON COLUMN offer.proposed_price IS 'Precio propuesto por el músico para el servicio.';
--- COMMENT ON COLUMN offer.availability_confirmed IS 'Indica si el músico ha confirmado su disponibilidad.';
--- COMMENT ON COLUMN offer.status IS 'Estado actual de la oferta (ej. SENT, ACCEPTED, REJECTED).';
--- COMMENT ON COLUMN offer.selected_at IS 'Marca de tiempo cuando la oferta fue seleccionada/aceptada.';
--- COMMENT ON COLUMN offer.created_at IS 'Marca de tiempo de creación del registro.';
--- COMMENT ON COLUMN offer.updated_at IS 'Marca de tiempo de la última actualización del registro.';
-
 -- INSTRUMENTOS DE SOLICITUD (instrumentos requeridos para una solicitud)
 CREATE TABLE IF NOT EXISTS request_instruments (
   request_id UUID NOT NULL,
   instrument_id UUID NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  PRIMARY KEY (request_id, instrument_id),
-  CONSTRAINT fk_request_instruments_request FOREIGN KEY (request_id) REFERENCES request(id) ON DELETE CASCADE,
-  CONSTRAINT fk_request_instruments_instrument FOREIGN KEY (instrument_id) REFERENCES instruments(id) ON DELETE CASCADE
+  PRIMARY KEY (request_id, instrument_id)
 );
 
 COMMENT ON TABLE request_instruments IS 'Instrumentos específicos requeridos para una solicitud musical.';
-COMMENT ON COLUMN request_instruments.request_id IS 'ID de la solicitud.';
-COMMENT ON COLUMN request_instruments.instrument_id IS 'ID del instrumento requerido.';
-COMMENT ON COLUMN request_instruments.created_at IS 'Marca de tiempo de creación del registro.'
+COMMENT ON COLUMN request_instruments.request_id IS 'ID de la solicitud a la que se asocia el instrumento.';
+COMMENT ON COLUMN request_instruments.instrument_id IS 'ID del instrumento requerido para la solicitud.';
+COMMENT ON COLUMN request_instruments.created_at IS 'Marca de tiempo de creación del registro.';
