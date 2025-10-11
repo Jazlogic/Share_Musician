@@ -1,12 +1,21 @@
 import { Request, Response } from 'express';
-import { createRequest, getCreatedRequests } from '../services/requestService';
+import { createRequest, getCreatedRequests, getEventTypes } from '../services/requestService';
 
 export const createRequestController = async (req: Request, res: Response) => {
   try {
-    const { client_id, title, description, category, instrument, event_date, start_time, end_time, location, price } = req.body;
+    if (!req.user) {
+      return res.status(401).json({ message: 'Unauthorized: User information not found' });
+    }
+
+    const allowedRoles = ['client', 'musician'];
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ message: 'Forbidden: Only clients and musicians can create requests' });
+    }
+
+    const { title, description, category, instrument, event_date, start_time, end_time, location, is_public } = req.body;
 
     const newRequest = await createRequest({
-      client_id,
+      client_id: req.user.userId,
       title,
       description,
       category,
@@ -15,7 +24,7 @@ export const createRequestController = async (req: Request, res: Response) => {
       start_time,
       end_time,
       location,
-      total_price: price,
+      is_public,
     });
     res.status(201).json(newRequest);
   } catch (error) {
@@ -38,5 +47,15 @@ export const getCreatedRequestsController = async (req: Request, res: Response) 
   } catch (error) {
     console.error('Error in getCreatedRequestsController:', error);
     res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const getEventTypesController = async (req: Request, res: Response) => {
+  try {
+    const eventTypes = await getEventTypes();
+    res.status(200).json(eventTypes);
+  } catch (error: any) {
+    console.error('Error fetching event types:', error);
+    res.status(500).json({ message: error.message });
   }
 };

@@ -1,5 +1,5 @@
 -- ==============================
--- Migration: Add new tables from deploy.sql schema
+-- Migración: Añadir nuevas tablas del esquema deploy.sql
 -- ==============================
 
 DO $$
@@ -61,7 +61,7 @@ BEGIN
 END
 $$;
 
--- EVENT TYPES
+-- TIPOS DE EVENTOS
 CREATE TABLE IF NOT EXISTS event_types (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL UNIQUE
@@ -71,7 +71,7 @@ COMMENT ON TABLE event_types IS 'Tipos de eventos musicales (ej. Boda, Concierto
 COMMENT ON COLUMN event_types.id IS 'Identificador único del tipo de evento.';
 COMMENT ON COLUMN event_types.name IS 'Nombre del tipo de evento.';
 
--- INSTRUMENTS (catalog)
+-- INSTRUMENTOS (catálogo)
 CREATE TABLE IF NOT EXISTS instruments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(100) UNIQUE NOT NULL, -- Ej: Guitarra, Piano, Voz
@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS instruments (
   icon TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
--- drop table request;
+-- eliminar tabla request;
 COMMENT ON TABLE instruments IS 'Catálogo de instrumentos musicales disponibles en la plataforma.';
 COMMENT ON COLUMN instruments.id IS 'Identificador único del instrumento.';
 COMMENT ON COLUMN instruments.name IS 'Nombre del instrumento (ej. Guitarra, Piano, Voz).';
@@ -87,7 +87,7 @@ COMMENT ON COLUMN instruments.category IS 'Categoría a la que pertenece el inst
 COMMENT ON COLUMN instruments.icon IS 'Icono representativo del instrumento.';
 COMMENT ON COLUMN instruments.created_at IS 'Marca de tiempo de creación del registro.';
 
--- USER INSTRUMENTS (instrumentos que toca un músico)
+-- INSTRUMENTOS DE USUARIO (instrumentos que toca un músico)
 CREATE TABLE IF NOT EXISTS user_instruments (
   user_id UUID NOT NULL,
   instrument_id UUID NOT NULL,
@@ -106,7 +106,7 @@ COMMENT ON COLUMN user_instruments.experience_years IS 'Años de experiencia del
 COMMENT ON COLUMN user_instruments.created_at IS 'Marca de tiempo de creación del registro.';
 COMMENT ON COLUMN user_instruments.updated_at IS 'Marca de tiempo de la última actualización del registro.';
 
--- MUSICIAN TARIFFS (tarifas base por tipo de músico)
+-- TARIFAS DE MÚSICOS (tarifas base por tipo de músico)
 CREATE TABLE IF NOT EXISTS musician_tariffs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     category VARCHAR(100) NOT NULL UNIQUE,
@@ -122,7 +122,7 @@ COMMENT ON COLUMN musician_tariffs.created_at IS 'Marca de tiempo de creación d
 COMMENT ON COLUMN musician_tariffs.updated_at IS 'Marca de tiempo de la última actualización del registro.';
 
 -- ==============================
--- PRICING CONFIG (configuración para cálculo de tarifas)
+-- CONFIGURACIÓN DE PRECIOS (configuración para cálculo de tarifas)
 -- ==============================
 CREATE TABLE IF NOT EXISTS pricing_config (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -151,8 +151,8 @@ COMMENT ON COLUMN pricing_config.is_active IS 'Indica si esta configuración de 
 COMMENT ON COLUMN pricing_config.created_at IS 'Marca de tiempo de creación del registro.';
 COMMENT ON COLUMN pricing_config.updated_at IS 'Marca de tiempo de la última actualización del registro.';
 
--- REQUESTS (solicitudes de músicos)
--- Tabla comentada para actualizar estructura de request (init.sql). Fecha: 2024-10-23
+-- SOLICITUDES (solicitudes de músicos)
+-- Tabla comentada para actualizar estructura de solicitud (init.sql). Fecha: 2025-10-10 
 /*
 DROP TABLE IF EXISTS request;
 CREATE TABLE IF NOT EXISTS requests (
@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS requests (
 );
 */
 
--- Comandos ALTER para completar tabla request (init.sql)
+-- Comandos ALTER para completar tabla solicitud (init.sql)
 ALTER TABLE request ADD COLUMN IF NOT EXISTS event_type_id UUID;
 ALTER TABLE request ADD COLUMN IF NOT EXISTS start_time TIME WITH TIME ZONE;
 ALTER TABLE request ADD COLUMN IF NOT EXISTS end_time TIME WITH TIME ZONE;
@@ -231,7 +231,7 @@ COMMENT ON COLUMN request.updated_at IS 'Marca de tiempo de la última actualiza
 ALTER TABLE request ADD CONSTRAINT fk_requests_client_id FOREIGN KEY (client_id) REFERENCES users(user_id) ON DELETE CASCADE;
 ALTER TABLE request ADD CONSTRAINT fk_requests_event_type_id FOREIGN KEY (event_type_id) REFERENCES event_types(id) ON DELETE CASCADE;
 
--- REQUEST STATUS HISTORY (trazabilidad de cambios)
+-- HISTORIAL DE ESTADO DE SOLICITUD (trazabilidad de cambios)
 CREATE TABLE IF NOT EXISTS request_status_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   request_id UUID NOT NULL,
@@ -251,7 +251,7 @@ COMMENT ON COLUMN request_status_history.changed_by IS 'ID del usuario o sistema
 COMMENT ON COLUMN request_status_history.change_reason IS 'Razón del cambio de estado.';
 COMMENT ON COLUMN request_status_history.created_at IS 'Marca de tiempo de creación del registro.';
 
--- NOTIFICATIONS
+-- NOTIFICACIONES
 CREATE TABLE IF NOT EXISTS notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
@@ -273,7 +273,7 @@ COMMENT ON COLUMN notifications.link IS 'Enlace asociado a la notificación.';
 COMMENT ON COLUMN notifications.is_read IS 'Indica si el usuario ha leído la notificación.';
 COMMENT ON COLUMN notifications.created_at IS 'Marca de tiempo de creación del registro.';
 
--- MUSICIAN AVAILABILITY
+-- DISPONIBILIDAD DEL MÚSICO
 CREATE TABLE IF NOT EXISTS musician_availability (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   musician_id UUID NOT NULL,
@@ -295,7 +295,7 @@ COMMENT ON COLUMN musician_availability.is_available IS 'Indica si el músico es
 COMMENT ON COLUMN musician_availability.created_at IS 'Marca de tiempo de creación del registro.';
 COMMENT ON COLUMN musician_availability.updated_at IS 'Marca de tiempo de la última actualización del registro.';
 
--- USER BALANCES
+-- SALDOS DE USUARIO
 CREATE TABLE IF NOT EXISTS user_balances (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID UNIQUE NOT NULL,
@@ -319,7 +319,7 @@ COMMENT ON COLUMN user_balances.currency IS 'Moneda utilizada para los balances 
 COMMENT ON COLUMN user_balances.created_at IS 'Marca de tiempo de creación del registro.';
 COMMENT ON COLUMN user_balances.updated_at IS 'Marca de tiempo de la última actualización del registro.';
 
--- USER TRANSACTIONS
+-- TRANSACCIONES DE USUARIO
 CREATE TABLE IF NOT EXISTS user_transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
@@ -349,7 +349,7 @@ COMMENT ON COLUMN user_transactions.currency IS 'Moneda de la transacción (ej. 
 COMMENT ON COLUMN user_transactions.created_at IS 'Marca de tiempo de creación del registro.';
 COMMENT ON COLUMN user_transactions.updated_at IS 'Marca de tiempo de la última actualización del registro.';
 
--- ADMIN ACTIONS
+-- ACCIONES DE ADMINISTRADOR
 CREATE TABLE IF NOT EXISTS admin_actions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   admin_id UUID NOT NULL,
@@ -367,7 +367,7 @@ COMMENT ON COLUMN admin_actions.action IS 'Tipo de acción realizada (ej. BLOCK_
 COMMENT ON COLUMN admin_actions.reason IS 'Razón o justificación de la acción.';
 COMMENT ON COLUMN admin_actions.created_at IS 'Marca de tiempo de creación del registro.';
 
--- OFFERS (propuestas de músicos)
+-- OFERTAS (propuestas de músicos)
 -- CREATE TABLE IF NOT EXISTS offer (
 --     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 --     request_id UUID NOT NULL REFERENCES request(id) ON DELETE CASCADE,
@@ -392,7 +392,7 @@ COMMENT ON COLUMN admin_actions.created_at IS 'Marca de tiempo de creación del 
 -- COMMENT ON COLUMN offer.created_at IS 'Marca de tiempo de creación del registro.';
 -- COMMENT ON COLUMN offer.updated_at IS 'Marca de tiempo de la última actualización del registro.';
 
--- REQUEST INSTRUMENTS (instrumentos requeridos para una solicitud)
+-- INSTRUMENTOS DE SOLICITUD (instrumentos requeridos para una solicitud)
 CREATE TABLE IF NOT EXISTS request_instruments (
   request_id UUID NOT NULL,
   instrument_id UUID NOT NULL,

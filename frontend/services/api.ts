@@ -4,25 +4,27 @@ function resolveBaseUrl(): string {
   // Highest priority: public env var (Expo)
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
   if (envUrl && typeof envUrl === 'string' && envUrl.trim().length > 0) {
+    console.log('3. envUrl:', envUrl);
     return envUrl.trim();
   }
 
   // Try to infer LAN host from Expo hostUri/debuggerHost
   const hostUri = (Constants as any)?.expoConfig?.hostUri || (Constants as any)?.manifest?.debuggerHost;
-  console.log('hostUri:', hostUri);
+  console.log('2. hostUri:', hostUri);
   if (typeof hostUri === 'string') {
     const host = hostUri.split(':')[0];
     if (host) {
+      console.log('host:', host);
       return `http://${host}:3001`;
     }
   }
 
-  // Fallback to localhost
+  // Fallback to localhost 
   return 'http://localhost:3001';
 }
 
-export const BASE_URL = resolveBaseUrl();
-
+export const BASE_URL = resolveBaseUrl() || 'http://192.168.56.17:3001';
+console.log('1. BASE_URL:', BASE_URL);
 interface RequestOptions extends RequestInit {
   headers?: Record<string, string>;
 }
@@ -46,6 +48,7 @@ export interface MessageResponse {
 }
 
 async function request<T>(url: string, options?: RequestOptions): Promise<ApiResponse<T>> {
+  console.log('request url:', `${BASE_URL}${url}`);
   const response = await fetch(`${BASE_URL}${url}`, {
     ...options,
     headers: {

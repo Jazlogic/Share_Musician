@@ -58,19 +58,11 @@ export default function CreateRequestScreen() {
   const { user } = useUser();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<{ id: string; name: string } | undefined>(undefined);
   const [instrument, setInstrument] = useState('');
+  const [location, setLocation] = useState(''); // New state for location
   const [isCategoryModalVisible, setCategoryModalVisible] = useState(false);
-  const eventTypes = [
-    'Culto Nocturno',
-    'Culto Diurno',
-    'Retiro',
-    'Congreso',
-    'Campaña',
-    'Concierto',
-    'Boda',
-    'Funeral',
-  ];
+  const [eventTypes, setEventTypes] = useState<{ id: string; name: string }[]>([]);
   const [eventDate, setEventDate] = useState('');
   const [startTime, setStartTime] = useState(new Date());
   const [endTime, setEndTime] = useState(new Date());
@@ -80,6 +72,23 @@ export default function CreateRequestScreen() {
   const [timePickerMode, setTimePickerMode] = useState<'start' | 'end'>('start'); // 'start' or 'end'
   const [date, setDate] = useState(new Date());
   const [timeError, setTimeError] = useState('');
+
+  useEffect(() => {
+    const fetchEventTypes = async () => {
+      try {
+        const response = await api.get('/requests/event-types');
+        if (response.status === 200) {
+          setEventTypes(response.data as { id: string; name: string }[]); // Explicitly cast to the expected type
+        } else {
+          Alert.alert('Error', 'Error al cargar los tipos de eventos.');
+        }
+      } catch (error: any) {
+        console.error('Error fetching event types:', error);
+        Alert.alert('Error', 'Error de red o servidor al cargar tipos de eventos.');
+      }
+    };
+    fetchEventTypes();
+  }, []);
 
   useEffect(() => {
     if (startTime && endTime) {
@@ -120,14 +129,20 @@ export default function CreateRequestScreen() {
   const submitButtonTextColor = useThemeColor({ light: AppColors.button.textLight, dark: AppColors.button.textDark }, 'text');
   const errorTextColor = useThemeColor({ light: AppColors.secondary.red, dark: AppColors.secondary.red }, 'text');
 
+  const handleCategorySelect = (categoryName: string) => {
+    const selected = eventTypes.find(type => type.name === categoryName);
+    setSelectedCategory(selected);
+    setCategoryModalVisible(false);
+  };
+
   const handleSubmit = async () => {
     if (!user || !user.user_id) {
       Alert.alert('Error', 'Usuario no autenticado. Por favor, inicie sesión.');
       return;
     }
 
-    if (!title || !description || !eventDate || !startTime || !endTime) {
-      Alert.alert('Error', 'Por favor, complete todos los campos obligatorios.');
+    if (!title || !description || !selectedCategory || !instrument || !eventDate || !startTime || !endTime || !price) {
+      Alert.alert('Error', 'Por favor, completa todos los campos obligatorios.');
       return;
     }
 
@@ -138,18 +153,19 @@ export default function CreateRequestScreen() {
 
     const formattedStartTime = startTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
     const formattedEndTime = endTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const formattedEventDate = new Date(eventDate).toISOString().split('T')[0]; // Format eventDate
 
     const requestData = {
       client_id: user.user_id,
       title,
       description,
-      category: category || undefined,
-      instrument: instrument || undefined,
-      event_date: eventDate,
+      event_type_id: selectedCategory?.id,
+      instrument,
+      location,
+      event_date: formattedEventDate,
       start_time: formattedStartTime,
       end_time: formattedEndTime,
       price: parseFloat(price),
-      // Otros campos opcionales si los agregas a la UI
     };
 
     try {
@@ -320,9 +336,11 @@ export default function CreateRequestScreen() {
           {/* Categoria de la solicitud */}
           <View style={styles.inputGroup}>
             <FontAwesome name="tags" size={20} color={tintColor} style={styles.inputIcon} />
-            <TouchableOpacity style={[dynamicStyles.datePickerButton, { borderColor: tintColor }]} onPress={() => setCategoryModalVisible(true)}>
+            <TouchableOpacity
+              style={[dynamicStyles.datePickerButton, { borderColor: tintColor }]} onPress={() => setCategoryModalVisible(true)}
+            >
               <Text style={[dynamicStyles.datePickerButtonText, { color: textColor }]}>
-                {category ? category : "Seleccionar Categoría"}
+                {selectedCategory ? selectedCategory.name : "Seleccionar Categoría"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -331,12 +349,34 @@ export default function CreateRequestScreen() {
           <View style={styles.inputGroup}>
             <FontAwesome name="music" size={20} color={tintColor} style={styles.inputIcon} />
             <TextInput
-              style={[dynamicStyles.input, { color: textColor, borderColor: tintColor }]}
+              style={[styles.input, { borderColor: tintColor, color: textColor }]} // Aplicar estilos dinámicos
               placeholder="Instrumento (ej. Guitarra, Piano)"
               placeholderTextColor={tintColor}
               value={instrument}
               onChangeText={setInstrument}
             />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <FontAwesome name="map-marker" size={20} color={tintColor} style={styles.inputIcon} />
+            <TextInput
+              style={[styles.input, { borderColor: tintColor, color: textColor }]} // Aplicar estilos dinámicos
+              placeholder="Ubicación (ej. Sala de Conciertos XYZ)"
+              placeholderTextColor={tintColor}
+              value={location}
+              onChangeText={setLocation}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <FontAwesome name="tags" size={20} color={tintColor} style={styles.inputIcon} />
+            <TouchableOpacity
+              style={[dynamicStyles.datePickerButton, { borderColor: tintColor }]} onPress={() => setCategoryModalVisible(true)}
+            >
+              <Text style={[dynamicStyles.datePickerButtonText, { color: textColor }]}>
+                {selectedCategory ? selectedCategory.name : "Seleccionar Categoría"}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* Modal para seleccionar categoría */}
@@ -349,16 +389,15 @@ export default function CreateRequestScreen() {
             <View style={styles.centeredView}>
               <View style={[dynamicStyles.modalView, { backgroundColor: backgroundColor, shadowColor: shadowColor }]}>
                 <ScrollView style={styles.categoryList}>
-                  {eventTypes.map((type, index) => (
+                  {eventTypes.map((item) => (
                     <TouchableOpacity
-                      key={index}
+                      key={item.id}
                       style={dynamicStyles.categoryItem}
                       onPress={() => {
-                        setCategory(type);
-                        setCategoryModalVisible(false);
+                        handleCategorySelect(item.name);
                       }}
                     >
-                      <Text style={[dynamicStyles.categoryItemText, { color: textColor }]}>{type}</Text>
+                      <Text style={[dynamicStyles.categoryItemText, { color: textColor }]}>{item.name}</Text>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>

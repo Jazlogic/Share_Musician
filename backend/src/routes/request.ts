@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createRequestController, getCreatedRequestsController } from '../controllers/requestController';
+import { createRequestController, getCreatedRequestsController, getEventTypesController } from '../controllers/requestController';
 import { authenticateToken } from '../middleware/authMiddleware';
 
 const router = Router();
@@ -131,5 +131,31 @@ router.post('/', authenticateToken, createRequestController);
  *         description: Some server error.
  */
 router.get('/created', authenticateToken, getCreatedRequestsController);
+
+/**
+ * @swagger
+ * /request/event-types:
+ *   get:
+ *     summary: Get all available event types
+ *     tags: [Request]
+ *     responses:
+ *       200:
+ *         description: A list of event types.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     format: uuid
+ *                   name:
+ *                     type: string
+ *       500:
+ *         description: Some server error.
+ */
+router.get('/event-types', getEventTypesController);
 
 export default router;
