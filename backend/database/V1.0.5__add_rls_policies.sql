@@ -1,8 +1,13 @@
 -- ==============================
 -- Migration: Add RLS policies (corregido)
+-- Descripción: Habilita la Seguridad a Nivel de Fila (RLS) y define políticas de acceso detalladas
+-- para todas las tablas críticas de la aplicación. Las políticas garantizan que los usuarios solo
+-- accedan a los datos que les corresponden, basados en su rol y contexto de autenticación.
 -- ==============================
 
--- 1️⃣ Habilitar RLS en todas las tablas
+-- 1 Habilitar RLS en todas las tablas
+-- Explicación: RLS restringe el acceso a filas específicas basado en reglas definidas.
+-- Se habilita en tablas sensibles para proteger la privacidad y la integridad de los datos.
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_passwords ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_instruments ENABLE ROW LEVEL SECURITY;
@@ -15,9 +20,12 @@ ALTER TABLE user_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_actions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pricing_config ENABLE ROW LEVEL SECURITY;
 
--- 2️⃣ Políticas por tabla
+-- 2 Políticas por tabla
 
 -- USERS
+-- Política: "Users can read own data"
+-- Propósito: Permitir a los usuarios acceder a sus propios datos personales.
+-- Lógica: Compara el ID del usuario autenticado (auth.uid()) con el user_id de la fila.
 DROP POLICY IF EXISTS "Users can read own data" ON users;
 DO $$
 BEGIN
@@ -29,6 +37,7 @@ BEGIN
 END
 $$;
 
+-- Política para que los usuarios puedan actualizar sus propios datos.
 DROP POLICY IF EXISTS "Users can update own data" ON users;
 DO $$
 BEGIN
@@ -40,6 +49,7 @@ BEGIN
 END
 $$;
 
+-- Política para permitir que cualquier persona se registre.
 DROP POLICY IF EXISTS "Anyone can register" ON users;
 DO $$
 BEGIN
@@ -52,6 +62,9 @@ END
 $$;
 
 -- USER PASSWORDS
+-- Política: "Users can read own user_passwords"
+-- Propósito: Garantizar que los usuarios solo vean sus propias contraseñas (hash).
+-- Importancia: Evita que los usuarios accedan a credenciales de otros usuarios.
 DROP POLICY IF EXISTS "Users can read own user_passwords" ON user_passwords;
 DO $$
 BEGIN
@@ -62,6 +75,7 @@ BEGIN
   END IF;
 END
 $$;
+-- Política para que los usuarios puedan insertar sus propias contraseñas.
 -- Users can insert own password
 DROP POLICY IF EXISTS "Users can insert own password" ON user_passwords;
 DO $$
@@ -73,13 +87,23 @@ BEGIN
   END IF;
 END
 $$;
+-- Política para que los usuarios puedan actualizar sus propias contraseñas.
 -- Users can update own password
-DROP POLICY IF EXISTS "Users can update own password" ON user_passwords;
-CREATE POLICY "Users can update own password"
-  ON user_passwords
-  FOR UPDATE
-  USING (auth.uid()::uuid = user_id)
-  WITH CHECK (auth.uid()::uuid = user_id);
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update own password' AND tablename = 'user_passwords') THEN
+    DROP POLICY "Users can update own password" ON user_passwords;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update own password' AND tablename = 'user_passwords') THEN
+    CREATE POLICY "Users can update own password"
+      ON user_passwords
+      FOR UPDATE
+      USING (auth.uid()::uuid = user_id)
+      WITH CHECK (auth.uid()::uuid = user_id);
+  END IF;
+END
+$$;
+-- Política para que los usuarios puedan eliminar sus propias contraseñas.
 -- Users can delete own password
 DROP POLICY IF EXISTS "Users can delete own password" ON user_passwords;
 DO $$
@@ -93,11 +117,21 @@ END
 $$;
 
 -- USER INSTRUMENTS
-DROP POLICY IF EXISTS "Users can manage own instruments" ON user_instruments;
-CREATE POLICY "Users can manage own instruments"
-  ON user_instruments FOR ALL
-  USING (auth.uid() = user_id);
+-- Política para que los usuarios puedan gestionar sus propios instrumentos (CRUD).
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can manage own instruments' AND tablename = 'user_instruments') THEN
+    DROP POLICY "Users can manage own instruments" ON user_instruments;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can manage own instruments' AND tablename = 'user_instruments') THEN
+    CREATE POLICY "Users can manage own instruments"
+      ON user_instruments FOR ALL
+      USING (auth.uid() = user_id);
+  END IF;
+END
+$$;
 
+-- Política para que los usuarios puedan leer sus propios instrumentos.
 DROP POLICY IF EXISTS "Users can read own user_instruments" ON user_instruments;
 DO $$
 BEGIN
@@ -109,6 +143,7 @@ BEGIN
 END
 $$;
 
+-- Política para que el público pueda leer los instrumentos de los usuarios.
 DROP POLICY IF EXISTS "Public can read user instruments" ON user_instruments;
 DO $$
 BEGIN
@@ -121,16 +156,35 @@ END
 $$;
 
 -- REQUEST
-DROP POLICY IF EXISTS "Public can read public request" ON request;
-CREATE POLICY "Public can read public request"
-  ON request FOR SELECT
-  USING (status IN ('CREATED', 'OFFER_RECEIVED'));
+-- Política para que el público pueda leer solicitudes públicas.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public can read public request' AND tablename = 'request') THEN
+    DROP POLICY "Public can read public request" ON request;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public can read public request' AND tablename = 'request') THEN
+    CREATE POLICY "Public can read public request"
+      ON request FOR SELECT
+      USING (status IN ('CREATED', 'OFFER_RECEIVED'));
+  END IF;
+END
+$$;
 
-DROP POLICY IF EXISTS "Leaders can manage own request" ON request;
-CREATE POLICY "Leaders can manage own request"
-  ON request FOR ALL
-  USING (auth.uid() = client_id);
+-- Política para que los líderes puedan gestionar sus propias solicitudes (CRUD).
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Leaders can manage own request' AND tablename = 'request') THEN
+    DROP POLICY "Leaders can manage own request" ON request;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Leaders can manage own request' AND tablename = 'request') THEN
+    CREATE POLICY "Leaders can manage own request"
+      ON request FOR ALL
+      USING (auth.uid() = client_id);
+  END IF;
+END
+$$;
 
+-- Política para que los músicos puedan crear solicitudes.
 -- Musicians can create request
 DROP POLICY IF EXISTS "Musicians can create request" ON request;
 DO $$
@@ -144,6 +198,7 @@ END
 $$;
 
 -- OFFER
+-- Política para que los músicos puedan leer sus propias ofertas.
 DROP POLICY IF EXISTS "Musicians can read own offer" ON offer;
 DO $$
 BEGIN
@@ -155,6 +210,7 @@ BEGIN
 END
 $$;
 
+-- Política para que los líderes puedan leer ofertas para sus solicitudes.
 DROP POLICY IF EXISTS "Leaders can read offers for their request" ON offer;
 DO $$
 BEGIN
@@ -166,9 +222,12 @@ BEGIN
 END
 $$;
 
-DROP POLICY IF EXISTS "Musicians can create offers" ON offer;
+-- Política para que los músicos puedan crear ofertas.
 DO $$
 BEGIN
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Musicians can create offers' AND tablename = 'offer') THEN
+    DROP POLICY "Musicians can create offers" ON offer;
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Musicians can create offers' AND tablename = 'offer') THEN
     CREATE POLICY "Musicians can create offers"
       ON offer FOR INSERT
@@ -177,6 +236,7 @@ BEGIN
 END
 $$;
 
+-- Política para que los músicos puedan actualizar sus propias ofertas.
 DROP POLICY IF EXISTS "Musicians can update own offers" ON offer;
 DO $$
 BEGIN
@@ -188,6 +248,7 @@ BEGIN
 END
 $$;
 
+-- Política para que los líderes puedan actualizar ofertas para sus solicitudes.
 DROP POLICY IF EXISTS "Leaders can update offers for their request" ON offer;
 DO $$
 BEGIN
@@ -199,6 +260,7 @@ BEGIN
 END
 $$;
 
+-- Política para que los músicos puedan eliminar sus propias ofertas.
 DROP POLICY IF EXISTS "Musicians can delete own offers" ON offer;
 DO $$
 BEGIN
@@ -211,6 +273,7 @@ END
 $$;
 
 -- NOTIFICATIONS
+-- Política para que los usuarios puedan leer sus propias notificaciones.
 DROP POLICY IF EXISTS "Users can read own notifications" ON notifications;
 DO $$
 BEGIN
@@ -222,6 +285,7 @@ BEGIN
 END
 $$;
 
+-- Política para que los usuarios puedan actualizar sus propias notificaciones.
 DROP POLICY IF EXISTS "Users can update own notifications" ON notifications;
 DO $$
 BEGIN
@@ -233,6 +297,7 @@ BEGIN
 END
 $$;
 
+-- Política para que el sistema pueda insertar notificaciones.
 DROP POLICY IF EXISTS "System can insert notifications" ON notifications;
 DO $$
 BEGIN
@@ -245,22 +310,41 @@ END
 $$;
 
 -- MUSICIAN AVAILABILITY
-DROP POLICY IF EXISTS "Musicians can manage their own availability" ON musician_availability;
-CREATE POLICY "Musicians can manage their own availability"
-  ON musician_availability FOR ALL
-  USING (auth.uid()::uuid = musician_id);
+-- Política para que los músicos puedan gestionar su propia disponibilidad (CRUD).
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Musicians can manage their own availability' AND tablename = 'musician_availability') THEN
+    DROP POLICY "Musicians can manage their own availability" ON musician_availability;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Musicians can manage their own availability' AND tablename = 'musician_availability') THEN
+    CREATE POLICY "Musicians can manage their own availability"
+      ON musician_availability FOR ALL
+      USING (auth.uid()::uuid = musician_id);
+  END IF;
+END
+$$;
 
-DROP POLICY IF EXISTS "Admins can manage all availability" ON musician_availability;
-CREATE POLICY "Admins can manage all availability"
-  ON musician_availability FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE users.user_id = auth.uid()::uuid
-      AND users.role = 'admin'
-    )
-  );
+-- Política para que los administradores puedan gestionar toda la disponibilidad de los músicos (CRUD).
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage all availability' AND tablename = 'musician_availability') THEN
+    DROP POLICY "Admins can manage all availability" ON musician_availability;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage all availability' AND tablename = 'musician_availability') THEN
+    CREATE POLICY "Admins can manage all availability"
+      ON musician_availability FOR ALL
+      USING (
+        EXISTS (
+          SELECT 1 FROM users
+          WHERE users.user_id = auth.uid()::uuid
+          AND users.role = 'admin'
+        )
+      );
+  END IF;
+END
+$$;
 
+-- Política para que los músicos puedan leer su propia disponibilidad.
 DROP POLICY IF EXISTS "Musicians can read own availability" ON musician_availability;
 DO $$
 BEGIN
@@ -273,6 +357,7 @@ END
 $$;
 
 -- USER BALANCES
+-- Política para que los usuarios puedan ver su propio balance.
 DROP POLICY IF EXISTS "Users can view own balance" ON user_balances;
 DO $$
 BEGIN
@@ -284,6 +369,7 @@ BEGIN
 END
 $$;
 
+-- Política para que los administradores puedan ver todos los balances.
 DROP POLICY IF EXISTS "Admins can view all balances" ON user_balances;
 DO $$
 BEGIN
@@ -301,6 +387,7 @@ END
 $$;
 
 -- USER TRANSACTIONS
+-- Política para que los usuarios puedan ver sus propias transacciones.
 DROP POLICY IF EXISTS "Users can view own transactions" ON user_transactions;
 DO $$
 BEGIN
@@ -312,6 +399,7 @@ BEGIN
 END
 $$;
 
+-- Política para que los administradores puedan gestionar transacciones (CRUD).
 DROP POLICY IF EXISTS "Admins can manage transactions" ON user_transactions;
 DO $$
 BEGIN
@@ -329,17 +417,27 @@ END
 $$;
 
 -- ADMIN ACTIONS
-DROP POLICY IF EXISTS "Admins can manage admin actions" ON admin_actions;
-CREATE POLICY "Admins can manage admin actions"
-  ON admin_actions FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE users.user_id = auth.uid()::uuid
-      AND users.role = 'admin'
-    )
-  );
+-- Política para que los administradores puedan gestionar acciones de administración (CRUD).
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage admin actions' AND tablename = 'admin_actions') THEN
+    DROP POLICY "Admins can manage admin actions" ON admin_actions;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage admin actions' AND tablename = 'admin_actions') THEN
+    CREATE POLICY "Admins can manage admin actions"
+      ON admin_actions FOR ALL
+      USING (
+        EXISTS (
+          SELECT 1 FROM users
+          WHERE users.user_id = auth.uid()::uuid
+          AND users.role = 'admin'
+        )
+      );
+  END IF;
+END
+$$;
 
+-- Política para que los administradores puedan ver acciones de administración.
 DROP POLICY IF EXISTS "Admins can view admin actions" ON admin_actions;
 DO $$
 BEGIN
@@ -352,6 +450,7 @@ END
 $$;
 
 -- PRICING CONFIG
+-- Política para que todos puedan leer la configuración de precios activa.
 DROP POLICY IF EXISTS "Everyone can read active pricing config" ON pricing_config;
 DO $$
 BEGIN
@@ -363,6 +462,7 @@ BEGIN
 END
 $$;
 
+-- Política para que los administradores puedan gestionar la configuración de precios (CRUD).
 DROP POLICY IF EXISTS "Admins can manage pricing config" ON pricing_config;
 DO $$
 BEGIN

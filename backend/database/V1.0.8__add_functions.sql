@@ -1,6 +1,6 @@
 -- Función: set_updated_at()
--- Propósito: Actualiza automáticamente la columna 'updated_at' de una tabla al momento actual.
--- Uso: Se utiliza como un TRIGGER BEFORE UPDATE en cualquier tabla que tenga una columna 'updated_at'.
+-- Propósito: Esta función se utiliza como un disparador (trigger) para actualizar automáticamente
+--            la columna 'updated_at' de una tabla a la fecha y hora actuales cada vez que un registro es modificado.
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -10,8 +10,10 @@ END;
 $$ LANGUAGE plpgsql; -- Especifica que la función está escrita en PL/pgSQL, el lenguaje de procedimiento de PostgreSQL.
 
 -- Función: calculate_request_price()
--- Propósito: Calcula el precio total de una solicitud de evento, incluyendo tarifas base, duración, factores y comisiones.
--- Uso: Se utiliza como un TRIGGER BEFORE INSERT en la tabla 'request' para establecer los valores de precio antes de que se guarde la solicitud.
+-- Propósito: Esta función se activa como un disparador (trigger) antes de insertar o actualizar
+--            un registro en la tabla 'request'. Su objetivo es calcular automáticamente el precio
+--            total de una solicitud de evento, considerando la tarifa base del músico, la duración
+--            del evento, la distancia, factores de experiencia e instrumento, y la comisión del sistema.
 CREATE OR REPLACE FUNCTION calculate_request_price()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -22,11 +24,17 @@ DECLARE
   instr_factor NUMERIC(4,2) := 1; -- Declara y inicializa un factor de instrumento (por defecto 1).
   fee NUMERIC(12,2); -- Declara una variable para almacenar la comisión del sistema.
   total NUMERIC(12,2); -- Declara una variable para almacenar el precio total antes de la comisión.
+  event_category VARCHAR(255); -- Variable para almacenar el nombre del tipo de evento
 BEGIN
-  -- Obtiene la tarifa por hora base de la tabla 'musician_tariffs' según el tipo de evento de la nueva solicitud.
+  -- Obtiene el nombre del tipo de evento de la tabla event_types
+  SELECT name INTO event_category
+  FROM event_types
+  WHERE id = NEW.event_type_id;
+
+  -- Obtiene la tarifa horaria base de musician_tariffs según la categoría del evento
   SELECT hourly_rate INTO base
   FROM musician_tariffs
-  WHERE category = NEW.event_type
+  WHERE category = event_category
   LIMIT 1;
 
   -- Calcula la duración del evento en horas a partir de la diferencia entre la hora de fin y la hora de inicio.
@@ -55,8 +63,10 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Función: calculate_event_price()
--- Propósito: Calcula el precio total de un evento, incluyendo tarifas base, duración, factores y comisiones.
--- Uso: Se utiliza como un TRIGGER BEFORE INSERT O UPDATE en la tabla 'events' para establecer los valores de precio.
+-- Propósito: Esta función se activa como un disparador (trigger) antes de insertar o actualizar
+--            un registro en la tabla 'events'. Su objetivo es calcular automáticamente el precio
+--            total de un evento, considerando la tarifa base del músico, la duración
+--            del evento, la distancia, factores de experiencia e instrumento, y la comisión del sistema.
 CREATE OR REPLACE FUNCTION calculate_event_price()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -100,15 +110,16 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Función: update_user_balance()
--- Propósito: Actualiza el balance de un usuario después de una transacción.
--- Uso: Se utiliza como un TRIGGER AFTER INSERT en la tabla 'transactions' para ajustar el balance del usuario afectado.
+-- Propósito: Esta función se activa como un disparador (trigger) después de insertar
+--            un nuevo registro en la tabla 'user_transactions'. Su objetivo es actualizar
+--            el balance del usuario afectado sumando o restando el monto de la transacción.
 CREATE OR REPLACE FUNCTION update_user_balance()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Actualiza el balance del usuario sumando el monto de la nueva transacción.
-  UPDATE users
-  SET balance = balance + NEW.amount
-  WHERE id = NEW.user_id;
+  -- Actualiza el balance disponible del usuario sumando el monto de la nueva transacción.
+  UPDATE user_balances
+  SET available_balance = available_balance + NEW.amount
+  WHERE user_id = NEW.user_id;
 
   RETURN NEW; -- Retorna el nuevo registro de la transacción.
 END;
@@ -119,13 +130,15 @@ $$ LANGUAGE plpgsql; -- Especifica que la función está escrita en PL/pgSQL;
 -- DISTANCE CALCULATION
 -- ==============================
 -- Función: calculate_distance_km(lat1, lon1, lat2, lon2)
--- Propósito: Calcula la distancia en kilómetros entre dos puntos geográficos utilizando la fórmula de Haversine.
+-- Propósito: Esta función calcula la distancia en kilómetros entre dos puntos geográficos
+--            utilizando la fórmula de Haversine. Es útil para determinar la distancia
+--            entre la ubicación de un evento y la ubicación de un músico, por ejemplo.
 -- Parámetros:
---   lat1: Latitud del primer punto.
---   lon1: Longitud del primer punto.
---   lat2: Latitud del segundo punto.
---   lon2: Longitud del segundo punto.
--- Retorna: La distancia en kilómetros como un valor numérico.
+--   lat1: Latitud del primer punto (DOUBLE PRECISION).
+--   lon1: Longitud del primer punto (DOUBLE PRECISION).
+--   lat2: Latitud del segundo punto (DOUBLE PRECISION).
+--   lon2: Longitud del segundo punto (DOUBLE PRECISION).
+-- Retorna: La distancia en kilómetros como un valor numérico (NUMERIC).
 CREATE OR REPLACE FUNCTION calculate_distance_km(
   lat1 DOUBLE PRECISION,
   lon1 DOUBLE PRECISION,
@@ -152,13 +165,15 @@ END;
 $$ LANGUAGE plpgsql; -- Especifica que la función está escrita en PL/pgSQL.
 
 -- Función: calculate_travel_time_minutes(lat1, lon1, lat2, lon2)
--- Propósito: Calcula el tiempo de viaje estimado en minutos entre dos puntos geográficos.
+-- Propósito: Esta función calcula el tiempo de viaje estimado en minutos entre dos puntos geográficos.
+--            Utiliza la función `calculate_distance_km` para obtener la distancia y luego aplica
+--            una velocidad de viaje promedio para estimar el tiempo.
 -- Parámetros:
---   lat1: Latitud del punto de origen.
---   lon1: Longitud del punto de origen.
---   lat2: Latitud del punto de destino.
---   lon2: Longitud del punto de destino.
--- Retorna: El tiempo de viaje estimado en minutos como un valor numérico.
+--   lat1: Latitud del punto de origen (DOUBLE PRECISION).
+--   lon1: Longitud del punto de origen (DOUBLE PRECISION).
+--   lat2: Latitud del punto de destino (DOUBLE PRECISION).
+--   lon2: Longitud del punto de destino (DOUBLE PRECISION).
+-- Retorna: El tiempo de viaje estimado en minutos como un valor numérico (NUMERIC).
 CREATE OR REPLACE FUNCTION calculate_travel_time_minutes(
   lat1 DOUBLE PRECISION,
   lon1 DOUBLE PRECISION,
@@ -185,13 +200,14 @@ END;
 $$ LANGUAGE plpgsql; -- Especifica que la función está escrita en PL/pgSQL.
 
 -- Función: manage_musician_availability(p_musician_id, p_start_time, p_end_time, p_action, p_availability_id)
--- Propósito: Permite a los músicos gestionar sus franjas de disponibilidad bloqueadas (insertar, actualizar, eliminar).
+-- Propósito: Esta función permite a los músicos gestionar sus franjas de disponibilidad bloqueadas.
+--            Puede insertar nuevas franjas, actualizar las existentes o eliminarlas.
 -- Parámetros:
---   p_musician_id: ID del músico.
---   p_start_time: Hora de inicio de la franja de disponibilidad.
---   p_end_time: Hora de fin de la franja de disponibilidad.
---   p_action: Acción a realizar ('INSERT', 'UPDATE', 'DELETE').
---   p_availability_id: ID de la franja de disponibilidad a actualizar o eliminar (opcional).
+--   p_musician_id: UUID del músico cuya disponibilidad se va a gestionar.
+--   p_start_time: TIMESTAMP WITH TIME ZONE que indica el inicio de la franja de disponibilidad.
+--   p_end_time: TIMESTAMP WITH TIME ZONE que indica el fin de la franja de disponibilidad.
+--   p_action: TEXT que especifica la acción a realizar ('INSERT', 'UPDATE', 'DELETE').
+--   p_availability_id: UUID opcional para identificar la franja de disponibilidad a actualizar o eliminar.
 CREATE OR REPLACE FUNCTION manage_musician_availability(
   p_musician_id UUID,
   p_start_time TIMESTAMP WITH TIME ZONE,
@@ -228,13 +244,14 @@ $$ LANGUAGE plpgsql; -- Especifica que la función está escrita en PL/pgSQL.
 -- ==============================
 
 -- Función: create_notification(p_user_id, p_type, p_title, p_message, p_link)
--- Propósito: Crea una nueva notificación para un usuario específico.
+-- Propósito: Esta función crea una nueva notificación en la tabla 'notifications' para un usuario específico.
+--            Permite enviar mensajes informativos, alertas o actualizaciones a los usuarios.
 -- Parámetros:
---   p_user_id: ID del usuario que recibirá la notificación.
---   p_type: Tipo de notificación (ej. 'request', 'offer', 'info').
---   p_title: Título de la notificación.
---   p_message: Contenido del mensaje de la notificación.
---   p_link: Enlace asociado a la notificación (opcional).
+--   p_user_id: UUID del usuario que recibirá la notificación.
+--   p_type: VARCHAR(50) que especifica el tipo de notificación (ej. 'SYSTEM', 'MESSAGE', 'ALERT').
+--   p_title: VARCHAR(255) que contiene el título de la notificación.
+--   p_message: TEXT que contiene el contenido principal del mensaje de la notificación.
+--   p_link: TEXT opcional que proporciona un enlace asociado a la notificación.
 CREATE OR REPLACE FUNCTION create_notification(
   p_user_id UUID,
   p_type VARCHAR(50),
@@ -243,14 +260,17 @@ CREATE OR REPLACE FUNCTION create_notification(
   p_link TEXT DEFAULT NULL
 ) RETURNS VOID AS $$
 BEGIN
-  -- Inserta una nueva notificación en la tabla 'notifications'.
   INSERT INTO notifications (user_id, type, title, message, link)
   VALUES (p_user_id, p_type, p_title, p_message, p_link);
 END;
 $$ LANGUAGE plpgsql; -- Especifica que la función está escrita en PL/pgSQL.
 
 -- Función: notify_musicians_new_request()
--- Propósito: Notifica a los músicos activos sobre una nueva solicitud de evento, aplicando filtros de disponibilidad, tiempo de viaje y buffers.
+-- Propósito: Esta función se activa como un disparador (trigger) después de insertar
+--            un nuevo registro en la tabla 'requests'. Su objetivo es notificar a los
+--            músicos activos sobre una nueva solicitud de evento, aplicando filtros
+--            de disponibilidad, tiempo de viaje y buffers para asegurar que la notificación
+--            sea relevante para el músico.
 -- Uso: Se utiliza como un TRIGGER AFTER INSERT en la tabla 'requests'.
 CREATE OR REPLACE FUNCTION notify_musicians_new_request()
 RETURNS TRIGGER AS $$
@@ -275,13 +295,12 @@ BEGIN
   event_lon := (NEW.location->>'longitude')::DOUBLE PRECISION;
 
   -- Itera sobre todos los músicos activos.
-  FOR musician_rec IN SELECT u.id AS musician_id, u.home_latitude, u.home_longitude
+  FOR musician_rec IN SELECT u.user_id AS musician_id
                       FROM users u
-                      WHERE u.is_musician = TRUE AND u.is_active = TRUE
+                      WHERE u.role = 'musician' AND u.status = 'active'
   LOOP
     -- Inicializa las variables de latitud y longitud del hogar del músico.
-    musician_home_lat := musician_rec.home_latitude;
-    musician_home_lon := musician_rec.home_longitude;
+
 
     -- Obtiene el último evento confirmado del músico.
     SELECT ma.end_time, ma.latitude, ma.longitude
@@ -347,10 +366,12 @@ BEGIN
 
   RETURN NEW; -- Retorna el nuevo registro de la solicitud.
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql; -- Especifica que la función está escrita en PL/pgSQL.
 
 -- Función: notify_leader_new_offer()
--- Propósito: Notifica al líder de una solicitud cuando un músico hace una oferta.
+-- Propósito: Esta función se activa como un disparador (trigger) después de insertar
+--            un nuevo registro en la tabla 'offer'. Su objetivo es notificar al líder
+--            de una solicitud cuando un músico hace una oferta para esa solicitud.
 -- Uso: Se utiliza como un TRIGGER AFTER INSERT en la tabla 'offer'.
 CREATE OR REPLACE FUNCTION notify_leader_new_offer()
 RETURNS TRIGGER AS $$
@@ -373,7 +394,7 @@ BEGIN
     client_id,
     'offer',
     'Nueva Oferta Recibida',
-    'El músico ' || musician_name || ' ha hecho una oferta para tu solicitud.',
+    musician_name || ' ha hecho una oferta para tu solicitud de evento.',
     '/request/' || NEW.request_id
   );
 
@@ -382,8 +403,11 @@ END;
 $$ LANGUAGE plpgsql; -- Especifica que la función está escrita en PL/pgSQL.
 
 -- Función: notify_musician_offer_selected()
--- Propósito: Notifica a un músico cuando su oferta ha sido seleccionada para una solicitud.
--- Uso: Se utiliza como un TRIGGER AFTER UPDATE en la tabla 'offer' cuando el estado cambia a 'accepted'.
+-- Propósito: Esta función se activa como un disparador (trigger) después de actualizar
+--            un registro en la tabla 'offer'. Su objetivo es notificar a un músico
+--            cuando su oferta ha sido seleccionada (aceptada) para una solicitud de evento.
+-- Uso: Se utiliza como un TRIGGER AFTER UPDATE en la tabla 'offer' cuando el estado
+--      de la oferta cambia a 'accepted'.
 CREATE OR REPLACE FUNCTION notify_musician_offer_selected()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -401,8 +425,8 @@ BEGIN
       NEW.musician_id,
       'offer_accepted',
       '¡Tu Oferta Ha Sido Aceptada!',
-      'Tu oferta para la solicitud ' || request_title || ' ha sido seleccionada.',
-      '/offer/' || NEW.id
+      'Tu oferta para la solicitud "' || request_title || '" ha sido aceptada.',
+      '/event/' || NEW.request_id -- Asumiendo que la solicitud aceptada se convierte en un evento
     );
   END IF;
 
@@ -411,15 +435,19 @@ END;
 $$ LANGUAGE plpgsql; -- Especifica que la función está escrita en PL/pgSQL.
 
 -- Función: notify_event_status_change()
--- Propósito: Notifica al líder y al músico cuando el estado de una solicitud cambia a IN_PROGRESS.
--- Uso: Se utiliza como un TRIGGER AFTER UPDATE en la tabla 'request'.
+-- Propósito: Esta función se activa como un disparador (trigger) después de actualizar
+--            un registro en la tabla 'request'. Su objetivo es notificar tanto al líder
+--            de la solicitud como al músico involucrado cuando el estado de una solicitud
+--            cambia a 'IN_PROGRESS', indicando que el evento ha sido confirmado y está en curso.
+-- Uso: Se utiliza como un TRIGGER AFTER UPDATE en la tabla 'request' cuando el estado
+--      de la solicitud cambia a 'IN_PROGRESS'.
 CREATE OR REPLACE FUNCTION notify_event_status_change()
 RETURNS TRIGGER AS $$
 DECLARE
-  musician_id_val UUID;
-  leader_name VARCHAR(255);
-  musician_name VARCHAR(255);
-  event_date_str TEXT;
+  musician_id_val UUID; -- ID del músico asociado a la oferta aceptada.
+  leader_name VARCHAR(255); -- Nombre del líder de la solicitud.
+  musician_name VARCHAR(255); -- Nombre del músico.
+  event_date_str TEXT; -- Fecha del evento formateada como texto.
 BEGIN
   -- Solo procede si el estado cambia a 'IN_PROGRESS'
   IF NEW.status = 'IN_PROGRESS' AND OLD.status IS DISTINCT FROM 'IN_PROGRESS' THEN
@@ -429,52 +457,55 @@ BEGIN
     WHERE request_id = NEW.id AND status = 'ACCEPTED'
     LIMIT 1;
 
-    -- Obtener nombres del líder y del músico
+    -- Obtener los nombres del líder y del músico
     SELECT name INTO leader_name FROM users WHERE id = NEW.client_id;
     SELECT name INTO musician_name FROM users WHERE id = musician_id_val;
 
-    -- Formatear la fecha del evento
-    event_date_str := TO_CHAR(NEW.event_date, 'DD/MM/YYYY HH24:MI');
+    -- Formatear la fecha del evento para la notificación
+    event_date_str := TO_CHAR(NEW.start_time, 'DD/MM/YYYY HH24:MI');
 
-    -- Notificar al líder
+    -- Notificar al líder de la solicitud
     PERFORM create_notification(
       NEW.client_id,
-      'request_update',
-      'Evento en Progreso: ' || event_date_str,
-      'Tu solicitud para el evento del ' || event_date_str || ' con ' || musician_name || ' ha comenzado.',
-      '/request/' || NEW.id
+      'event_status',
+      '¡Evento Confirmado y en Curso!',
+      'Tu evento "' || NEW.title || '" con ' || musician_name || ' el ' || event_date_str || ' ha sido confirmado y está en curso.',
+      '/event/' || NEW.id
     );
 
     -- Notificar al músico
     PERFORM create_notification(
       musician_id_val,
-      'request_update',
-      'Evento en Progreso: ' || event_date_str,
-      'El evento del ' || event_date_str || ' con ' || leader_name || ' ha comenzado.',
-      '/request/' || NEW.id
+      'event_status',
+      '¡Has Confirmado un Evento!',
+      'Has confirmado el evento "' || NEW.title || '" con ' || leader_name || ' el ' || event_date_str || '. ¡Prepárate!',
+      '/event/' || NEW.id
     );
   END IF;
 
-  RETURN NEW;
+  RETURN NEW; -- Retorna el nuevo registro de la solicitud.
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql; -- Especifica que la función está escrita en PL/pgSQL.
 
 -- Función: send_event_reminder(p_request_id UUID)
--- Propósito: Envía un recordatorio al líder y al músico 10 minutos antes del inicio de un evento.
--- Uso: Esta función debe ser invocada por un sistema de tareas programadas externo (ej. cron job).
+-- Propósito: Esta función envía un recordatorio tanto al líder de la solicitud como al músico
+--            participante 10 minutos antes del inicio programado de un evento. Está diseñada
+--            para ser invocada por un sistema de tareas programadas externo (ej. un cron job)
+--            que monitorea los eventos próximos.
+-- Uso: Debe ser invocada externamente con el ID de la solicitud (p_request_id) del evento.
 CREATE OR REPLACE FUNCTION send_event_reminder(
   p_request_id UUID
 ) RETURNS VOID AS $$
 DECLARE
-  musician_id_val UUID;
-  client_id_val UUID;
-  leader_name VARCHAR(255);
-  musician_name VARCHAR(255);
-  event_date_val TIMESTAMP WITH TIME ZONE;
-  event_date_str TEXT;
+  musician_id_val UUID; -- ID del músico asociado a la oferta aceptada.
+  client_id_val UUID; -- ID del cliente (líder) de la solicitud.
+  leader_name VARCHAR(255); -- Nombre del líder de la solicitud.
+  musician_name VARCHAR(255); -- Nombre del músico.
+  event_date_val TIMESTAMP WITH TIME ZONE; -- Fecha y hora del evento.
+  event_date_str TEXT; -- Fecha del evento formateada como texto para la notificación.
 BEGIN
   -- Obtener detalles de la solicitud
-  SELECT client_id, event_date
+  SELECT client_id, start_time
   INTO client_id_val, event_date_val
   FROM request
   WHERE id = p_request_id;
@@ -485,7 +516,7 @@ BEGIN
   WHERE request_id = p_request_id AND status = 'ACCEPTED'
   LIMIT 1;
 
-  -- Si no se encuentra la solicitud o el músico, salir
+  -- Si no se encuentra la solicitud o el músico, salir de la función.
   IF client_id_val IS NULL OR musician_id_val IS NULL THEN
     RETURN;
   END IF;
@@ -494,16 +525,16 @@ BEGIN
   SELECT name INTO leader_name FROM users WHERE id = client_id_val;
   SELECT name INTO musician_name FROM users WHERE id = musician_id_val;
 
-  -- Formatear la fecha del evento
+  -- Formatear la fecha del evento para la notificación
   event_date_str := TO_CHAR(event_date_val, 'DD/MM/YYYY HH24:MI');
 
-  -- Notificar al líder
+  -- Notificar al líder de la solicitud
   PERFORM create_notification(
     client_id_val,
     'event_reminder',
     'Recordatorio: Evento Próximo - ' || event_date_str,
     'Tu evento con ' || musician_name || ' comienza en 10 minutos.',
-    '/requests/' || p_request_id
+    '/event/' || p_request_id
   );
 
   -- Notificar al músico
@@ -512,7 +543,7 @@ BEGIN
     'event_reminder',
     'Recordatorio: Evento Próximo - ' || event_date_str,
     'Tu evento con ' || leader_name || ' comienza en 10 minutos.',
-    '/request/' || p_request_id
+    '/event/' || p_request_id
   );
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql; -- Especifica que la función está escrita en PL/pgSQL.
