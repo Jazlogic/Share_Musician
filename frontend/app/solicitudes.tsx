@@ -102,7 +102,7 @@ export default function SolicitudesScreen() {
 
 
 
-  const [requests, setRequests] = useState<Request[]>([]);
+  const [request, setRequest] = useState<Request[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedRequestId, setExpandedRequestId] = useState<string | null>(
@@ -111,7 +111,7 @@ export default function SolicitudesScreen() {
 
 
   useEffect(() => {
-    const fetchRequests = async () => {
+    const fetchRequest = async () => {
       setLoading(true);
       setError(null);
       try {
@@ -120,20 +120,21 @@ export default function SolicitudesScreen() {
           throw new Error("No authentication token found.");
         }
 
-        const response = await api.get<Request[]>("/requests/created", {
+        const response = await api.get<Request[]>("/request/created", {
           headers: {
             Authorization: `Bearer ${userToken}`,
           },
         });
-        setRequests(response.data);
+        setRequest(response.data);
+        console.log(response.data[0]);
       } catch (err: any) {
-        setError(err.message || "Failed to fetch requests.");
+        setError(err.message || "Failed to fetch request.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRequests();
+    fetchRequest();
   }, []);
 
   const toggleExpand = (requestId: string) => {
@@ -182,7 +183,7 @@ export default function SolicitudesScreen() {
     >
       <View style={styles.container}>
         <Text style={[styles.title, { color: textColor }]}>Solicitudes Creadas</Text>
-        {requests.length === 0 ? (
+        {request.length === 0 ? (
           <View style={[styles.container]}>
             <View>
               <Text style={{ color: textColor, fontSize: 26, fontWeight: 'bold' }}>No hay solicitudes creadas.</Text>
@@ -190,7 +191,7 @@ export default function SolicitudesScreen() {
           </View>
         ) : (
           <FlatList
-          data={requests}
+          data={request}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => {
             const isExpanded = item.id === expandedRequestId;

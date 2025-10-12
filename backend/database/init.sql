@@ -65,7 +65,6 @@ CREATE TABLE IF NOT EXISTS user_profile_image_history (
 );
 select * from user_profile_image_history;
 
-drop table user_profile_image_history;
 
 -- Tabla para contraseñas de usuarios (separada por seguridad)
 -- Esta tabla almacena las contraseñas hasheadas de los usuarios, separadas de la tabla principal de usuarios para mayor seguridad.
@@ -207,7 +206,7 @@ BEGIN
       start_time TIME,                                                                 -- Hora de inicio del evento.
       end_time TIME,                                                                   -- Hora de finalización del evento.
       event_duration INTERVAL,                                                         -- Duración total del evento.
-      price NUMERIC(12,2),                                                             -- Precio acordado para la solicitud.
+      price NUMERIC(12,2) DEFAULT 0.00,                                                             -- Precio acordado para la solicitud.
       tip NUMERIC(12,2),
       status request_status NOT NULL DEFAULT 'CREATED',                                -- Estado actual de la solicitud, usando la enumeración request_status.
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),                                     -- Marca de tiempo de creación del registro.
@@ -228,6 +227,8 @@ BEGIN
   END IF;
 END
 $$;
+
+select * from request;
 
 -- ==============================
 -- TABLA DE OFERTAS
