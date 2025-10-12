@@ -311,6 +311,8 @@ export const getEventTypes = async (): Promise<
 
 export const getRequestById = async (requestId: string) => {
   const client = await pool.connect();
+
+
   try {
     const query = `
       SELECT
@@ -321,10 +323,12 @@ export const getRequestById = async (requestId: string) => {
         r.description,
         et.name as category,
         r.location,
+        r.price,
+        r.distance_km,
         r.event_date,
         r.start_time,
         r.end_time,
-        r.total_price as price,
+        r.price,
         r.status,
         r.created_at,
         r.updated_at,
@@ -336,7 +340,7 @@ export const getRequestById = async (requestId: string) => {
       FROM request r
       JOIN event_types et ON r.event_type_id = et.id
       LEFT JOIN request_instruments ri ON r.id = ri.request_id
-      LEFT JOIN instruments i ON ri.instrument_id = i.instrument_id
+      LEFT JOIN instruments i ON ri.instrument_id = i.id
       WHERE r.id = $1
       GROUP BY r.id, et.name
     `;

@@ -8,7 +8,7 @@ import {
   View,
   ActivityIndicator,
   StyleSheet,
-  ImageBackground,
+  // ImageBackground,
   TouchableOpacity,
 } from "react-native";
 // `useEffect` y `useState` son hooks de React para manejar el ciclo de vida y el estado del componente.
@@ -17,6 +17,11 @@ import { useEffect, useState } from "react";
 import { api } from "../services/api";
 // `Ionicons` son iconos vectoriales de Expo, utilizados para mejorar la interfaz visual.
 import { Ionicons } from "@expo/vector-icons"; // Assuming @expo-vector-icons is installed
+import { AppColors } from "../theme/colors";
+import { LinearGradient } from 'expo-linear-gradient';
+import { useThemeColor } from "@/hooks/use-theme-color";
+import { ScrollView } from "react-native-gesture-handler";
+import BottomNavigationBar from "../components/BottomNavigationBar";
 
 interface Request {
   id: string;
@@ -25,16 +30,12 @@ interface Request {
   title: string;
   description: string;
   category: string;
-  location: {
-    address?: string;
-    lat?: number;
-    lng?: number;
-    distance_km?: number;
-  } | null;
+  location: string;
+  distance_km: number | null;
   event_date: string;
   start_time: string;
   end_time: string;
-  price: number;
+  price: number | null;
   status: string;
   created_at: string;
   updated_at: string;
@@ -56,6 +57,15 @@ export default function RequestDetailsScreen() {
   // Estado para almacenar cualquier mensaje de error, inicializado como nulo.
   const [error, setError] = useState<string | null>(null);
 
+  // const gradientStart = AppColors.background.gradientStartDark;
+  // const gradientEnd = AppColors.background.gradientEndDark;
+    const gradientStart = useThemeColor({ light: AppColors.background.gradientStartLight, dark: AppColors.background.gradientStartDark }, 'background');
+  const gradientEnd = useThemeColor({ light: AppColors.background.gradientEndLight, dark: AppColors.background.gradientEndDark }, 'background');
+  const color = useThemeColor({ light: AppColors.text.light, dark: AppColors.text.dark }, 'text');
+  const buttonColor = useThemeColor({ light: AppColors.button.backgroundLight, dark: AppColors.button.backgroundDark }, 'text');
+  const backgrounIitemColor = useThemeColor({ light: AppColors.items.backgroundLight, dark: AppColors.items.backgroundDark}, 'background');
+  const itemTextColor = useThemeColor({ light: AppColors.items.textLight, dark: AppColors.items.textDark }, 'text');
+
   // `useEffect` para cargar los detalles de la solicitud cuando el `id` cambia.
   useEffect(() => {
     // Verifica si el `id` existe antes de intentar cargar los detalles.
@@ -64,7 +74,8 @@ export default function RequestDetailsScreen() {
       const fetchRequestDetails = async () => {
         try {
           // Realiza una llamada a la API para obtener la solicitud por su ID.
-          const response = await api.getRequestById<Request>(`/request/${id}`);
+          const response = await api.getRequestById<Request>(`${id}`);
+          console.log('Request Details:',response.data);
           // Actualiza el estado `request` con los datos recibidos.
           setRequest(response.data);
         } catch (err) {
@@ -116,306 +127,203 @@ export default function RequestDetailsScreen() {
 
   // Renderiza la interfaz de usuario una vez que los datos de la solicitud están disponibles.
   return (
-    // `ImageBackground` para establecer una imagen de fondo para toda la pantalla.
-    <ImageBackground
-      source={require("../assets/images/background.png")} // Ruta de la imagen de fondo.
-      style={styles.background}
+    <LinearGradient
+      colors={[gradientStart, gradientEnd]}
+      style={{ flex: 1 }}
     >
-      {/* Configuración de la pantalla de navegación, ocultando el encabezado predeterminado. */}
       <Stack.Screen
         options={{ title: "Request Details", headerShown: false }}
       />
-      {/* Una capa superpuesta oscura para mejorar la legibilidad del texto sobre la imagen de fondo. */}
-      <View style={styles.overlay} />
-      {/* Título principal de la pantalla. */}
-      <Text style={styles.headerTitle}>Detalles de la Solicitud</Text>
+      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+        <View style={styles.titleContainer}>
+          <Text style={[styles.sectionTitle, { color }]}>Detalles de la Solicitud</Text>
+        </View>
+       <LinearGradient
+          colors={[gradientStart, gradientEnd]}
+          style={styles.balanceCard}
+          >
+          <View style={[styles.section]}>
+          <Text style={[styles.sectionTitle, { color }]}>{request.title}</Text>
+        </View>
+          <Text style={[styles.balanceTitle, { color, marginTop: 10}]}>Tarifa</Text>
+          <Text style={[styles.price, { color }]}>RD$ {request.price}</Text>
 
-      {/* Contenedor principal de la tarjeta de detalles de la solicitud. */}
-      <View style={styles.card}>
-        {/* Encabezado de la tarjeta con el título de la solicitud y el precio. */}
-        <View style={styles.cardHeader}>
-          {/* Icono de documento para el título de la solicitud. */}
-          <Ionicons
-            name="document-text-outline"
-            size={24}
-            color="#333"
-            style={styles.icon}
-          />
-          {/* Contenedor para el texto del encabezado de la tarjeta. */}
-          <View style={styles.headerTextContainer}>
-            {/* Título de la solicitud. */}
-            <Text style={styles.cardTitle}>{request.title}</Text>
-            {/* Muestra la distancia si está disponible en los datos de la solicitud. */}
-            {request.location?.distance_km && (
-              <Text style={styles.distance}>
-                {request.location.distance_km} km away
-              </Text>
-            )}
+
+        </LinearGradient>
+           
+          <View style={[styles.addMethodButton,{borderBottomColor:AppColors.text.white,borderBottomWidth:1,marginBottom:10,borderRadius:10}]}>
+            <Text style={[styles.addMethodButtonText, { color: AppColors.text.white }]}>Informacion Musical</Text>
           </View>
-          {/* Precio de la solicitud. */}
-          <Text style={styles.price}>RD$ {request.price.toFixed(2)}</Text>
-        </View>
+            <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
+               <Ionicons name="musical-notes" size={24} color={AppColors.text.white} />
+              <Text style={[styles.itemsText, { color: itemTextColor }]}>{request.instruments.join(', ')}</Text>
+            </View>
+            <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
+               <Ionicons name="folder" size={24} color={AppColors.text.white} />
+              <Text style={[styles.itemsText, { color: itemTextColor }]}> {request.category}</Text>
+            </View>
+          <View style={[styles.addMethodButton,{borderBottomColor:AppColors.text.white,borderBottomWidth:1,marginBottom:10,borderRadius:10}]}>
+            <Text style={[styles.addMethodButtonText, { color: AppColors.text.white }]}>Informacion de ubicación</Text>
+          </View>
+            <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
+               <Ionicons name="location" size={24} color={AppColors.text.white} />
+              <Text style={[styles.itemsText, { color: itemTextColor }]}>{request.location}</Text>
+            </View>
+            <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
+               <Ionicons name="car" size={24} color={AppColors.text.white} />
+              <Text style={[styles.itemsText, { color: itemTextColor }]}>{request.distance_km ? `${request.distance_km} km` : 'N/A'}</Text>
+            </View>
+          <View style={[styles.addMethodButton,{borderBottomColor:AppColors.text.white,borderBottomWidth:1,marginBottom:10,borderRadius:10}]}>
+            <Text style={[styles.addMethodButtonText, { color: AppColors.text.white }]}>Informacion del tiempo</Text>
+          </View>
+            <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
+               <Ionicons name="calendar" size={24} color={AppColors.text.white} />
+              <Text style={[styles.itemsText, { color: itemTextColor }]}>{new Date(request.event_date).toLocaleDateString()}</Text>
+            </View>
+            <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
+               <Ionicons name="time" size={24} color={AppColors.text.white} />
+              <Text style={[styles.itemsText, { color: itemTextColor }]}>{`${request.start_time} - ${request.end_time}`}</Text>
+            </View>
+            <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
+               <Ionicons name="checkmark-circle" size={24} color={AppColors.text.white} />
+              <Text style={[styles.itemsText, { color: itemTextColor }]}>{request.status}</Text>
+            </View>
+            <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
+               <Ionicons name="create" size={24} color={AppColors.text.white} />
+              <Text style={[styles.itemsText, { color: itemTextColor }]}>{new Date(request.created_at).toLocaleDateString()}</Text>
+            </View>
 
-        {/* Fila de detalles para el ID de la solicitud. */}
-        <View style={styles.detailRow}>
-          <Ionicons
-            name="information-circle-outline"
-            size={20}
-            color="#666"
-            style={styles.detailIcon}
-          />
-          <Text style={styles.detailText}>ID: {request.id}</Text>
-        </View>
-        {/* Fila de detalles para el cliente y la fecha del evento. */}
-        <View style={styles.detailRow}>
-          <Ionicons
-            name="person-circle-outline"
-            size={20}
-            color="#666"
-            style={styles.detailIcon}
-          />
-          <Text style={styles.detailText}>
-            Client: Alex S. {new Date(request.event_date).toLocaleDateString()}{" "}
-            at {request.start_time}
-          </Text>
-        </View>
-        {/* Fila de detalles para la categoría de la solicitud. */}
-        <View style={styles.detailRow}>
-          <Ionicons
-            name="pricetag-outline"
-            size={20}
-            color="#666"
-            style={styles.detailIcon}
-          />
-          <Text style={styles.detailText}>Category: {request.category}</Text>
-        </View>
-        {/* Fila de detalles para la fecha del evento (actualmente muestra la descripción). */}
-        <View style={styles.detailRow}>
-          <Ionicons
-            name="calendar-outline"
-            size={20}
-            color="#666"
-            style={styles.detailIcon}
-          />
-          <Text style={styles.detailText}>
-            Event Date: {request.description}
-          </Text>
-        </View>
-        {/* Fila de detalles para el presupuesto de la solicitud. */}
-        <View style={styles.detailRow}>
-          <Ionicons
-            name="cash-outline"
-            size={20}
-            color="#666"
-            style={styles.detailIcon}
-          />
-          <Text style={styles.detailText}>
-            Budget: RD$ {request.price.toFixed(2)}
-          </Text>
-        </View>
-
-        {/* Contenedor para los botones de acción. */}
-        <View style={styles.buttonContainer}>
-          {/* Botón para contactar al cliente. */}
-          <TouchableOpacity style={styles.contactButton}>
-            <Text style={styles.contactButtonText}>Contact Client</Text>
-          </TouchableOpacity>
-          {/* Botón para hacer una oferta. */}
-          <TouchableOpacity style={styles.offerButton}>
-            <Text style={styles.offerButtonText}>Hacer Oferta</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Barra de navegación inferior. */}
-      <View style={styles.bottomNavBar}>
-        {/* Elemento de navegación para "Inicio". */}
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="home-outline" size={24} color="#fff" />
-          <Text style={styles.navText}>Inicio</Text>
-        </TouchableOpacity>
-        {/* Elemento de navegación para "Configuración". */}
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="settings-outline" size={24} color="#fff" />
-          <Text style={styles.navText}>Configuración</Text>
-        </TouchableOpacity>
-        {/* Elemento de navegación para "Billetera". */}
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="wallet-outline" size={24} color="#fff" />
-          <Text style={styles.navText}>Billetera</Text>
-        </TouchableOpacity>
-        {/* Elemento de navegación para "Dashboard". */}
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="grid-outline" size={24} color="#fff" />
-          <Text style={styles.navText}>Dashboard</Text>
-        </TouchableOpacity>
-      </View>
-    </ImageBackground>
+      </ScrollView>
+     <BottomNavigationBar/>
+    </LinearGradient>
   );
 }
 
-// Hoja de estilos para el componente RequestDetailsScreen.
+
 const styles = StyleSheet.create({
-  // Estilos para el contenedor de carga.
+  container: {
+    flex: 1,
+    marginTop: 30,
+  },
+  titleContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 20,
+    marginBottom: 20,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#1a1a2e", // Color de fondo oscuro.
+    backgroundColor: AppColors.background.dark,
   },
-  // Estilos para el texto de carga.
-  loadingText: {
+    errorText: {
     marginTop: 10,
-    color: "#fff", // Color de texto blanco.
+    fontSize: 16,
+    color: AppColors.secondary.red,
   },
-  // Estilos para el texto de error.
-  errorText: {
-    color: "red", // Color de texto rojo.
-    textAlign: "center",
-    marginTop: 20,
+    loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: AppColors.text.light,
   },
-  // Estilos para la imagen de fondo.
-  background: {
-    flex: 1,
-    resizeMode: "cover", // Ajusta la imagen para cubrir todo el espacio.
-    justifyContent: "center",
-    alignItems: "center",
+    scrollViewContent: {
+    padding: 16,
+    paddingBottom: 80, // Espacio para la barra de navegación inferior
   },
-  // Estilos para la capa superpuesta oscura.
-  overlay: {
-    ...StyleSheet.absoluteFillObject, // Cubre todo el espacio del padre.
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Fondo oscuro semitransparente.
-  },
-  // Estilos para el título del encabezado.
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#fff", // Color de texto blanco.
-    marginTop: 50,
-    marginBottom: 20,
-    position: "absolute", // Posicionamiento absoluto.
-    top: 0, // Alineado en la parte superior.
-  },
-  // Estilos para la tarjeta de detalles.
-  card: {
-    backgroundColor: "rgba(255, 255, 255, 0.9)", // Fondo blanco semitransparente.
+  // scrollViewContent: {
+  //   padding: 16,
+  //   paddingBottom: 80, // Espacio para la barra de navegación inferior
+  // },
+  balanceCard: {
     borderRadius: 15,
     padding: 20,
-    width: "90%",
-    maxWidth: 400,
-    shadowColor: "#000", // Sombra para dar profundidad.
+    marginBottom: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.1,
     shadowRadius: 5,
-    elevation: 8, // Elevación para Android.
-    marginTop: 100, // Ajuste para posicionar debajo del título.
+    // elevation: 8,
+  },
+  balanceTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 5,
+  },
+  price: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
+  addButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+  },
+  addButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  section: {
     marginBottom: 20,
   },
-  // Estilos para el encabezado de la tarjeta.
-  cardHeader: {
-    flexDirection: "row", // Elementos en fila.
-    alignItems: "center",
-    marginBottom: 15,
-    borderBottomWidth: 1, // Borde inferior.
-    borderBottomColor: "#eee",
-    paddingBottom: 10,
-  },
-  // Estilos para los iconos dentro de la tarjeta.
-  icon: {
-    marginRight: 10,
-  },
-  // Estilos para el contenedor de texto del encabezado de la tarjeta.
-  headerTextContainer: {
-    flex: 1, // Ocupa el espacio restante.
-  },
-  // Estilos para el título de la tarjeta.
-  cardTitle: {
+  sectionTitle: {
     fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: 'bold',
+    marginBottom: 15,
   },
-  // Estilos para el texto de distancia.
-  distance: {
-    fontSize: 14,
-    color: "#666",
+  itemsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    // elevation: 3,
   },
-  // Estilos para el precio.
-  price: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#007bff", // Color azul.
-  },
-  // Estilos para cada fila de detalles.
-  detailRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  // Estilos para los iconos de detalle.
-  detailIcon: {
-    marginRight: 8,
-  },
-  // Estilos para el texto de detalle.
-  detailText: {
+  itemsText: {
     fontSize: 16,
-    color: "#444",
+    marginLeft: 15,
   },
-  // Estilos para el contenedor de botones.
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around", // Espacio equitativo entre botones.
-    marginTop: 20,
+  addMethodButton: {
+    marginTop: 10,
+    padding: 10,
+    alignItems: 'center',
   },
-  // Estilos para el botón de "Contact Client".
-  contactButton: {
-    backgroundColor: "#e0e0e0", // Fondo gris claro.
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-    width: "48%", // Ancho del 48% para dos botones.
-    alignItems: "center",
-  },
-  // Estilos para el texto del botón de "Contact Client".
-  contactButtonText: {
-    color: "#333",
+  addMethodButtonText: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: '600',
   },
-  // Estilos para el botón de "Hacer Oferta".
-  offerButton: {
-    backgroundColor: "#007bff", // Fondo azul.
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-    width: "48%",
-    alignItems: "center",
+  transactionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 1,
+    // elevation: 3,
   },
-  // Estilos para el texto del botón de "Hacer Oferta".
-  offerButtonText: {
-    color: "#fff", // Color de texto blanco.
+  transactionDescription: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: '500',
   },
-  // Estilos para la barra de navegación inferior.
-  bottomNavBar: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    paddingVertical: 10,
-    backgroundColor: "rgba(0, 0, 0, 0.8)", // Fondo oscuro semitransparente.
-    position: "absolute", // Posicionamiento absoluto.
-    bottom: 0, // Alineado en la parte inferior.
-    borderTopLeftRadius: 20, // Bordes redondeados superiores.
-    borderTopRightRadius: 20,
+  transactionDate: {
+    fontSize: 13,
+    color: '#888',
+    marginTop: 2,
   },
-  // Estilos para cada elemento de navegación.
-  navItem: {
-    alignItems: "center",
-  },
-  // Estilos para el texto de navegación.
-  navText: {
-    color: "#fff", // Color de texto blanco.
-    fontSize: 12,
-    marginTop: 5,
+  transactionAmount: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
