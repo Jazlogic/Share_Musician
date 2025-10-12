@@ -37,3 +37,34 @@ export interface EmailVerification {
   expires_at: Date;
   verified: boolean;
 }
+
+export interface Request {
+  id: string;
+  client_id: string;
+  musician_id: string | null;
+  title: string;
+  description: string;
+  category: string;
+  location: {
+    address?: string;
+    lat?: number;
+    lng?: number;
+    distance_km?: number;
+  } | null;
+  event_date: Date;
+  start_time: string;
+  end_time: string;
+  event_duration: string;
+  price: number;
+  tip: number | null;
+  status: 'CREATED' | 'ACCEPTED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
+  created_at: Date;
+  updated_at: Date;
+  updated_by: string | null;
+  expiration_date: Date | null;
+  cancellation_reason: string | null;
+  client_rating: number | null;
+  musician_rating: number | null;
+  client_comment: string | null;
+  musician_comment: string | null;
+}

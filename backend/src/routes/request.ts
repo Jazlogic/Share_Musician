@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createRequestController, getCreatedRequestsController, getEventTypesController } from '../controllers/requestController';
+import { createRequestController, getCreatedRequestsController, getEventTypesController, getRequestByIdController } from '../controllers/requestController';
 import { authenticateToken } from '../middleware/authMiddleware';
 
 const router = Router();
@@ -157,5 +157,89 @@ router.get('/created', authenticateToken, getCreatedRequestsController);
  *         description: Some server error.
  */
 router.get('/event-types', getEventTypesController);
+
+/**
+ * @swagger
+ * /request/{id}:
+ *   get:
+ *     summary: Get a single music request by ID
+ *     tags: [Request]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: The ID of the request to retrieve.
+ *     responses:
+ *       200:
+ *         description: Details of the music request.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   format: uuid
+ *                 client_id:
+ *                   type: string
+ *                   format: uuid
+ *                 musician_id:
+ *                   type: string
+ *                   format: uuid
+ *                 title:
+ *                   type: string
+ *                 description:
+ *                   type: string
+ *                 category:
+ *                   type: string
+ *                 location:
+ *                   type: object
+ *                 event_date:
+ *                   type: string
+ *                   format: date
+ *                 start_time:
+ *                   type: string
+ *                   format: time
+ *                 end_time:
+ *                   type: string
+ *                   format: time
+ *                 price:
+ *                   type: number
+ *                   format: float
+ *                 status:
+ *                   type: string
+ *                 created_at:
+ *                   type: string
+ *                   format: date-time
+ *                 updated_at:
+ *                   type: string
+ *                   format: date-time
+ *                 is_public:
+ *                   type: boolean
+ *                 cancelled_by:
+ *                   type: string
+ *                   format: uuid
+ *                 cancellation_reason:
+ *                   type: string
+ *                 reopened_from_id:
+ *                   type: string
+ *                   format: uuid
+ *                 instruments:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *       401:
+ *         description: Unauthorized.
+ *       404:
+ *         description: Request not found.
+ *       500:
+ *         description: Some server error.
+ */
+router.get('/:id', authenticateToken, getRequestByIdController);
 
 export default router;

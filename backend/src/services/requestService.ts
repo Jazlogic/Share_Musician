@@ -1,6 +1,6 @@
-import { Pool } from 'pg';
-import dotenv from 'dotenv';
-import moment from 'moment'; // Importa moment para cálculos de fecha/hora
+import { Pool } from "pg";
+import dotenv from "dotenv";
+import moment from "moment"; // Importa moment para cálculos de fecha/hora
 
 dotenv.config();
 
@@ -38,11 +38,13 @@ export interface RequestData {
 }
 
 // Función auxiliar para obtener event_type_id del nombre de la categoría
-const getEventTypeIdByCategory = async (categoryName: string): Promise<string> => {
+const getEventTypeIdByCategory = async (
+  categoryName: string
+): Promise<string> => {
   const client = await pool.connect();
   try {
     const result = await client.query(
-      'SELECT id FROM event_types WHERE name = $1',
+      "SELECT id FROM event_types WHERE name = $1",
       [categoryName]
     );
     if (result.rows.length === 0) {
@@ -55,11 +57,13 @@ const getEventTypeIdByCategory = async (categoryName: string): Promise<string> =
 };
 
 // Función auxiliar para obtener instrument_ids del nombre del instrumento
-const getInstrumentIdsByInstrumentName = async (instrumentName: string): Promise<string[]> => {
+const getInstrumentIdsByInstrumentName = async (
+  instrumentName: string
+): Promise<string[]> => {
   const client = await pool.connect();
   try {
     const result = await client.query(
-      'SELECT instrument_id FROM instruments WHERE name = $1',
+      "SELECT instrument_id FROM instruments WHERE name = $1",
       [instrumentName]
     );
     if (result.rows.length === 0) {
@@ -72,11 +76,13 @@ const getInstrumentIdsByInstrumentName = async (instrumentName: string): Promise
 };
 
 // Función auxiliar para obtener el factor de precio del instrumento
-const getInstrumentPriceFactor = async (instrumentName: string): Promise<number> => {
+const getInstrumentPriceFactor = async (
+  instrumentName: string
+): Promise<number> => {
   const client = await pool.connect();
   try {
     const result = await client.query(
-      'SELECT price_factor FROM instruments WHERE name = $1',
+      "SELECT price_factor FROM instruments WHERE name = $1",
       [instrumentName]
     );
     if (result.rows.length === 0) {
@@ -89,11 +95,13 @@ const getInstrumentPriceFactor = async (instrumentName: string): Promise<number>
 };
 
 // Función auxiliar para obtener el factor de precio del tipo de evento
-const getEventTypePriceFactor = async (categoryName: string): Promise<number> => {
+const getEventTypePriceFactor = async (
+  categoryName: string
+): Promise<number> => {
   const client = await pool.connect();
   try {
     const result = await client.query(
-      'SELECT price_factor FROM event_types WHERE name = $1',
+      "SELECT price_factor FROM event_types WHERE name = $1",
       [categoryName]
     );
     if (result.rows.length === 0) {
@@ -120,16 +128,19 @@ const calculateRequestPrice = async (
   const endDateTime = moment(`${eventDate} ${endTime}`);
 
   if (!startDateTime.isValid() || !endDateTime.isValid()) {
-    throw new Error('Invalid date or time format for price calculation.');
+    throw new Error("Invalid date or time format for price calculation.");
   }
 
-  const durationHours = moment.duration(endDateTime.diff(startDateTime)).asHours();
+  const durationHours = moment
+    .duration(endDateTime.diff(startDateTime))
+    .asHours();
 
   // Tarifa base, se puede configurar o obtener de una tabla de configuración
   const baseRate = 50; // Tarifa base de ejemplo
 
   // Cálculo de precio simple: tarifaBase * duración * factorInstrumento * factorTipoEvento
-  let totalPrice = baseRate * durationHours * instrumentFactor * eventTypeFactor;
+  let totalPrice =
+    baseRate * durationHours * instrumentFactor * eventTypeFactor;
 
   // Asegurarse de que el precio no sea negativo o cero
   if (totalPrice <= 0) {
@@ -142,7 +153,7 @@ const calculateRequestPrice = async (
 export const createRequest = async (requestData: RequestData) => {
   const client = await pool.connect();
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     const {
       client_id,
@@ -171,8 +182,20 @@ export const createRequest = async (requestData: RequestData) => {
     }
 
     // Validación básica
-    if (!client_id || !event_type_id || !event_date || !start_time || !end_time || !title || !location || description === undefined || is_public === undefined) {
-      throw new Error('Missing required fields: client_id, title, description, event_type_id, event_date, start_time, end_time, location, is_public');
+    if (
+      !client_id ||
+      !event_type_id ||
+      !event_date ||
+      !start_time ||
+      !end_time ||
+      !title ||
+      !location ||
+      description === undefined ||
+      is_public === undefined
+    ) {
+      throw new Error(
+        "Missing required fields: client_id, title, description, event_type_id, event_date, start_time, end_time, location, is_public"
+      );
     }
 
     // Calcular precio
@@ -215,7 +238,7 @@ export const createRequest = async (requestData: RequestData) => {
       JSON.stringify(location),
       description,
       calculatedPrice,
-      optionalFields.status || 'CREATED',
+      optionalFields.status || "CREATED",
       is_public,
     ];
 
@@ -223,9 +246,9 @@ export const createRequest = async (requestData: RequestData) => {
     const requestId = result.rows[0].id;
 
     if (instrument_ids && instrument_ids.length > 0) {
-      const instrumentInsertPromises = instrument_ids.map(instrument_id =>
+      const instrumentInsertPromises = instrument_ids.map((instrument_id) =>
         client.query(
-          'INSERT INTO request_instruments (request_id, instrument_id) VALUES ($1, $2)',
+          "INSERT INTO request_instruments (request_id, instrument_id) VALUES ($1, $2)",
           [requestId, instrument_id]
         )
       );
@@ -234,16 +257,16 @@ export const createRequest = async (requestData: RequestData) => {
 
     // Registrar notificación de creación de solicitud
     await client.query(
-      'INSERT INTO notifications (user_id, type, message) VALUES ($1, $2, $3)',
-      [client_id, 'request_created', `Has creado una nueva solicitud: ${title}`]
+      "INSERT INTO notifications (user_id, type, message) VALUES ($1, $2, $3)",
+      [client_id, "request_created", `Has creado una nueva solicitud: ${title}`]
     );
 
-    await client.query('COMMIT');
+    await client.query("COMMIT");
     return { id: requestId, ...requestData, total_price: calculatedPrice };
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Error creating request:', error);
-    throw new Error('Could not create request');
+    await client.query("ROLLBACK");
+    console.error("Error creating request:", error);
+    throw new Error("Could not create request");
   } finally {
     client.release();
   }
@@ -253,10 +276,10 @@ export const getCreatedRequests = async (userId: string, userRole: string) => {
   let query = `SELECT * FROM request WHERE status = 'CREATED'`;
   const values: string[] = [];
 
-  if (userRole === 'musician') {
+  if (userRole === "musician") {
     // Los músicos pueden ver todas las solicitudes 'CREATED'
     // No se necesita una cláusula WHERE adicional para los músicos
-  } else if (userRole === 'leader') {
+  } else if (userRole === "leader") {
     // Los líderes solo pueden ver las solicitudes 'CREATED' que crearon
     query += ` AND client_id = $1`;
     values.push(userId);
@@ -269,16 +292,59 @@ export const getCreatedRequests = async (userId: string, userRole: string) => {
     const result = await pool.query(query, values);
     return result.rows;
   } catch (error) {
-    console.error('Error fetching created requests:', error);
-    throw new Error('Could not fetch created requests');
+    console.error("Error fetching created requests:", error);
+    throw new Error("Could not fetch created requests");
   }
 };
 
-export const getEventTypes = async (): Promise<{ id: string; name: string }[]> => {
+export const getEventTypes = async (): Promise<
+  { id: string; name: string }[]
+> => {
   const client = await pool.connect();
   try {
-    const result = await client.query('SELECT id, name FROM event_types');
+    const result = await client.query("SELECT id, name FROM event_types");
     return result.rows;
+  } finally {
+    client.release();
+  }
+};
+
+export const getRequestById = async (requestId: string) => {
+  const client = await pool.connect();
+  try {
+    const query = `
+      SELECT
+        r.id,
+        r.client_id,
+        r.musician_id,
+        r.title,
+        r.description,
+        et.name as category,
+        r.location,
+        r.event_date,
+        r.start_time,
+        r.end_time,
+        r.total_price as price,
+        r.status,
+        r.created_at,
+        r.updated_at,
+        r.is_public,
+        r.cancelled_by,
+        r.cancellation_reason,
+        r.reopened_from_id,
+        json_agg(i.name) AS instruments
+      FROM request r
+      JOIN event_types et ON r.event_type_id = et.id
+      LEFT JOIN request_instruments ri ON r.id = ri.request_id
+      LEFT JOIN instruments i ON ri.instrument_id = i.instrument_id
+      WHERE r.id = $1
+      GROUP BY r.id, et.name
+    `;
+    const result = await client.query(query, [requestId]);
+    return result.rows[0];
+  } catch (error) {
+    console.error("Error fetching request by ID:", error);
+    throw new Error("Could not fetch request by ID");
   } finally {
     client.release();
   }

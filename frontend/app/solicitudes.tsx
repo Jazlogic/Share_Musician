@@ -118,7 +118,7 @@ export default function SolicitudesScreen() {
       <View style={styles.cardActions}>
         <Pressable
           style={[styles.button, { backgroundColor: buttonBackgroundColorDetalle }]}
-          onPress={() => router.push({ pathname: "/modal", params: { requestId: item.id, flow: "requestDetails" } })} // Assuming a modal for details
+          onPress={() => router.push({ pathname: "/request-details", params: { id: item.id } })} // Navigate to details screen
         >
           <Text style={[styles.buttonText, { color: buttonTextColor }]}>Ver Detalles</Text>
         </Pressable>

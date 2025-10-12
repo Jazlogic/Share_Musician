@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createRequest, getCreatedRequests, getEventTypes } from '../services/requestService';
+import { createRequest, getCreatedRequests, getEventTypes, getRequestById } from '../services/requestService';
 
 export const createRequestController = async (req: Request, res: Response) => {
   try {
@@ -55,7 +55,21 @@ export const getEventTypesController = async (req: Request, res: Response) => {
     const eventTypes = await getEventTypes();
     res.status(200).json(eventTypes);
   } catch (error: any) {
-    console.error('Error fetching event types:', error);
-    res.status(500).json({ message: error.message });
+    console.error('Error in getEventTypesController:', error);
+    res.status(500).json({ message: 'Error fetching event types' });
+  }
+};
+
+export const getRequestByIdController = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const request = await getRequestById(id);
+    if (!request) {
+      return res.status(404).json({ message: 'Request not found' });
+    }
+    res.status(200).json(request);
+  } catch (error) {
+    console.error('Error in getRequestByIdController:', error);
+    res.status(500).json({ message: 'Error fetching request' });
   }
 };

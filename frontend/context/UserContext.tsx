@@ -64,7 +64,6 @@ export const UserProvider = ({ children }: UserProviderProps) => {
           Authorization: `Bearer ${userToken}`,
         },
       });
-      console.log('Fetched user:', response);
       setUser(response.data.user || response.data);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch user data.');
@@ -92,7 +91,6 @@ export const UserProvider = ({ children }: UserProviderProps) => {
           Authorization: `Bearer ${userToken}`,
         },
       });
-      console.log('Updated user:', response.data.user);
       setUser(response.data.user);
     } catch (err: any) {
       setError(err.message || 'Failed to update user profile.');

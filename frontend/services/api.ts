@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function resolveBaseUrl(): string {
   // Highest priority: public env var (Expo)
@@ -49,12 +50,19 @@ export interface MessageResponse {
 
 async function request<T>(url: string, options?: RequestOptions): Promise<ApiResponse<T>> {
   console.log('request url:', `${BASE_URL}${url}`);
+  const userToken = await AsyncStorage.getItem('userToken');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers || {}),
+  };
+
+  if (userToken) {
+    headers['Authorization'] = `Bearer ${userToken}`;
+  }
+
   const response = await fetch(`${BASE_URL}${url}`, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
+    headers,
   });
 
   const data: T = await response.json();
@@ -94,4 +102,5 @@ export const api = {
   delete: <T>(url: string, options?: RequestOptions) => request<T>(url, { ...options, method: 'DELETE' }),
   upload: <T>(url: string, formData: FormData, options?: RequestOptions) =>
     uploadRequest<T>(url, formData, { ...options, method: 'POST' }),
+  getRequestById: <T>(id: string, options?: RequestOptions) => api.get<T>(`/request/${id}`, options),
 };
