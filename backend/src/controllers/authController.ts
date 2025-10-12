@@ -319,17 +319,20 @@ export const register = async (req: Request, res: Response) => {
  */
 export const setUserPassword = async (req: Request, res: Response) => {
   // Extrae el correo electrónico, la contraseña y el código de verificación del cuerpo de la solicitud.
-  const { email, password, code } = req.body;
+  const { email, newPassword, code } = req.body;
+  console.log(req.body)
 
   try {
+    console.log('Received password in setUserPassword:', newPassword);
+    console.log('Length of received password:', newPassword ? newPassword.length : 'undefined');
     // Valida que la contraseña sea una cadena y tenga al menos 6 caracteres.
-    if (typeof password !== "string" || password.length < 6) {
+    if (typeof newPassword !== "string" || newPassword.length < 6) {
       return res
         .status(400)
         .json({ message: "La contraseña debe tener al menos 6 caracteres." });
     }
     // Llama al servicio de autenticación para establecer la contraseña y activar al usuario.
-    const { user, token } = await setPassword(email, password, code);
+    const { user, token } = await setPassword(email, newPassword, code);
     // Si es exitoso, envía una respuesta con estado 200, un mensaje de éxito, el objeto de usuario y un token de autenticación.
     res
       .status(200)
@@ -564,6 +567,8 @@ export const resetPasswordController = async (req: Request, res: Response) => {
   const { token, newPassword } = req.body;
 
   try {
+    console.log('Received newPassword in resetPasswordController:', newPassword);
+    console.log('Length of received newPassword:', newPassword ? newPassword.length : 'undefined');
     // Valida que la nueva contraseña sea una cadena y tenga al menos 6 caracteres.
     if (typeof newPassword !== "string" || newPassword.length < 6) {
       return res

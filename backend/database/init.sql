@@ -52,6 +52,8 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token_expires_at TIMESTA
 select * from users;
 
 delete from users where email = 'astaciosanchezjefryagustin@gmail.com';
+delete from users where email = 'jasbootstudios@gmail.com';
+delete from users where email = 'elica.app@gmail.com';
 
 -- Tabla para el historial de imágenes de perfil
 -- Esta tabla registra cada cambio en la imagen de perfil de un usuario, manteniendo un historial de las imágenes utilizadas.

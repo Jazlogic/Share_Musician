@@ -8,13 +8,13 @@ import { useUser } from '../context/UserContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SetPasswordScreen() {
-  const { email: emailParam, code: codeParam } = useLocalSearchParams();
+  const { email: emailParam, code: codeParam, flow: flowParam } = useLocalSearchParams();
   const [email, setEmail] = useState((emailParam as string) || '');
   const [code, setCode] = useState((codeParam as string) || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isCodeVerified, setIsCodeVerified] = useState(false); // Nuevo estado para controlar la verificación del código
+  const [isCodeVerified, setIsCodeVerified] = useState(flowParam === 'registration'); // Nuevo estado para controlar la verificación del código
   const router = useRouter();
   const { refreshUser } = useUser();
 
@@ -25,11 +25,11 @@ export default function SetPasswordScreen() {
     if (codeParam) {
       setCode(codeParam as string);
     }
-    // Si ambos parámetros están presentes, intentar verificar el código automáticamente
-    if (emailParam && codeParam) {
+    // Si ambos parámetros están presentes y NO es un flujo de registro, intentar verificar el código automáticamente
+    if (emailParam && codeParam && flowParam !== 'registration') {
       handleVerifyCode(emailParam as string, codeParam as string);
     }
-  }, [emailParam, codeParam]);
+  }, [emailParam, codeParam, flowParam]);
 
   const handleVerifyCode = async (emailToVerify: string, codeToVerify: string) => {
     try {
@@ -54,7 +54,16 @@ export default function SetPasswordScreen() {
     }
 
     try {
-      const response = await api.post<MessageResponse>('/auth/reset-password', { token: code, newPassword: password });
+      let response;
+      if (flowParam === 'registration') {
+        console.log('Contraseña: ', password);
+        // Flujo de registro: usar el código de verificación de email para establecer la contraseña
+        response = await api.post<MessageResponse>('/auth/set-password', { email, code, newPassword: password });
+      } else {
+        // Flujo de restablecimiento de contraseña: usar el token de restablecimiento
+        response = await api.post<MessageResponse>('/auth/reset-password', { token: code, newPassword: password });
+      }
+
       if (response.status === 200) {
         Alert.alert('Contraseña establecida', response.data.message);
         if (response.data.user && response.data.user.name && response.data.user.user_id && response.data.token) {
@@ -105,7 +114,7 @@ export default function SetPasswordScreen() {
           />
         )}
 
-        {!isCodeVerified && email && !codeParam && (
+        {!isCodeVerified && email && !codeParam && flowParam !== 'registration' && (
           <TouchableOpacity style={styles.setPasswordButton} onPress={() => handleVerifyCode(email, code)}>
             <Text style={styles.setPasswordButtonText}>VERIFICAR CÓDIGO</Text>
           </TouchableOpacity>
@@ -136,7 +145,7 @@ export default function SetPasswordScreen() {
             <View style={styles.passwordInputContainer}>
               <TextInput
                 style={styles.passwordInput}
-                placeholder="Confirmar nueva contraseña"
+                placeholder="Confirmar contraseña"
                 placeholderTextColor="#A9A9A9"
                 secureTextEntry={!showPassword}
                 value={confirmPassword}

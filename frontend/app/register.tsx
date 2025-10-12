@@ -42,7 +42,11 @@ export default function RegisterScreen() {
         Alert.alert('Error de registro', response.data.message || 'Algo salió mal');
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'No se pudo conectar al servidor.');
+      if (error.response && error.response.data && error.response.data.detail && error.response.data.detail.includes('already exists')) {
+        Alert.alert('Error de registro', 'El correo electrónico ya está registrado. Por favor, inicia sesión o usa otro correo.');
+      } else {
+        Alert.alert('Error', error.message || 'No se pudo conectar al servidor.');
+      }
     } finally {
       setSubmitting(false);
     }

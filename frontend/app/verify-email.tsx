@@ -21,11 +21,14 @@ export default function VerifyEmailScreen() {
       const response = await api.post<MessageResponse>('/auth/verify-email', { email, code: verificationCode });
       if (response.status === 200) {
         Alert.alert('Verificación exitosa', response.data.message);
-        router.replace({ pathname: '/set-password', params: { email, code: verificationCode } });
+        console.log('1. Código de verificación:', verificationCode);
+        router.replace({ pathname: '/set-password', params: { email, code: verificationCode, flow: 'registration' } });
       } else {
+        console.log('1. El error de verificación es:', response.data.message || 'Algo salió mal');
         Alert.alert('Error de verificación', response.data.message || 'Algo salió mal');
       }
     } catch (error: any) {
+      console.error('1. Error al verificar el correo electrónico:', error.message || 'No se pudo conectar al servidor.');
       Alert.alert('Error', error.message || 'No se pudo conectar al servidor.');
     }
   };

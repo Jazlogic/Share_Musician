@@ -248,17 +248,29 @@ export const requestPasswordReset = async (email: string): Promise<void> => {
     const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
     const resetTokenExpires = new Date(Date.now() + 3600000); // 1 hora de validez
 
-    await client.query(
+    console.log('User ID for password reset:', user.user_id);
+    console.log('Generated resetToken:', resetToken);
+    console.log('Generated resetTokenExpires:', resetTokenExpires);
+
+    const updateResult = await client.query(
       'UPDATE users SET reset_password_token = $1, reset_password_expires_at = $2 WHERE user_id = $3',
       [resetToken, resetTokenExpires, user.user_id]
     );
 
-    // Enviar correo electrónico con el token de restablecimiento
+    console.log('Update query result:', updateResult);
+
+    if (updateResult.rowCount === 0) {
+      console.error('Failed to update reset token for user:', user.user_id);
+      throw new Error('No se pudo actualizar el token de restablecimiento');
+    }
+
     await sendPasswordResetEmail(user.email, resetToken);
 
     await client.query('COMMIT');
-  } catch (error) {
+    console.log('Token de restablecimiento almacenado correctamente para el usuario:', user.user_id);
+  } catch (error: any) {
     await client.query('ROLLBACK');
+    console.error('Error al solicitar restablecimiento de contraseña:', error.message, error);
     throw error;
   } finally {
     client.release();
