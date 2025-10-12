@@ -6,31 +6,33 @@ import {
   FlatList,
   ActivityIndicator,
   Pressable,
+  ScrollView,
 } from "react-native";
-import { AppColors } from "../theme/colors";
+import { Colors } from "../constants/theme";
 import BottomNavigationBar from "@/components/BottomNavigationBar";
+import { AppColors } from "../theme/colors";
 import { LinearGradient } from "expo-linear-gradient";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { api } from "../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useUser } from "../context/UserContext";
 import { FontAwesome } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 interface Request {
   id: string;
-  client_id: string;
   title: string;
-  description: string;
-  category: string;
+  distance_km: string;
+  price: string;
   event_date: string;
   start_time: string;
   end_time: string;
-  price: number;
-  status: string;
+  description: string;
+  category: string;
+  // Add any other fields you need for the details screen
 }
 
 export default function SolicitudesScreen() {
-  // const { user } = useUser();
+  const router = useRouter();
   const gradientStart = useThemeColor(
     {
       light: AppColors.background.gradientStartLight,
@@ -45,7 +47,7 @@ export default function SolicitudesScreen() {
     },
     "background"
   );
-  const requestCardColor = useThemeColor(
+  const cardBackgroundColor = useThemeColor(
     {
       light: AppColors.items.backgroundLight,
       dark: AppColors.items.backgroundDark,
@@ -56,62 +58,29 @@ export default function SolicitudesScreen() {
     { light: AppColors.text.light, dark: AppColors.text.dark },
     "text"
   );
-  const itemBackgroundColor = useThemeColor(
-    {
-      light: AppColors.items.backgroundLight,
-      dark: AppColors.items.backgroundDark,
-    },
+  const secondaryTextColor = useThemeColor(
+    { light: AppColors.text.secondary, dark: AppColors.text.secondary },
+    "text"
+  );
+  const buttonBackgroundColor = useThemeColor(
+    { light: AppColors.button.backgroundLight, dark: AppColors.button.backgroundDark },
     "background"
   );
-  const primaryCardsRequestBackgroundColor = useThemeColor(
-    {
-      light: AppColors.cardsRequest.primaryBackgroundLight,
-      dark: AppColors.cardsRequest.primaryBackgroundDark,
-    },
+  const buttonBackgroundColorDetalle = useThemeColor(
+    { light: AppColors.items.backgroundLight, dark: AppColors.items.backgroundDark },
     "background"
   );
-  const secondaryCardsRequestBackgroundColor = useThemeColor(
-    {
-      light: AppColors.cardsRequest.secondaryBackgroundLight,
-      dark: AppColors.cardsRequest.secondaryBackgroundDark,
-    },
-    "background"
-  );
-  const borderColor = useThemeColor(
-    {
-      light: AppColors.cardsRequest.borderLight,
-      dark: AppColors.cardsRequest.borderDark,
-    },
+  const buttonTextColor = useThemeColor(
+    { light: AppColors.button.textLight, dark: AppColors.button.textDark },
     "text"
   );
 
-  const bgGradientStart = useThemeColor(
-    {
-      light: AppColors.cardsRequest.gradientStartLight,
-      dark: AppColors.cardsRequest.gradientStartDark,
-    },
-    "background"
-  );
-  const bgGradientEnd = useThemeColor(
-    {
-      light: AppColors.cardsRequest.gradientEndLight,
-      dark: AppColors.cardsRequest.gradientEndDark,
-    },
-    "background"
-  );
-
-
-
-  const [request, setRequest] = useState<Request[]>([]);
+  const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedRequestId, setExpandedRequestId] = useState<string | null>(
-    null
-  );
-
 
   useEffect(() => {
-    const fetchRequest = async () => {
+    const fetchRequests = async () => {
       setLoading(true);
       setError(null);
       try {
@@ -125,38 +94,57 @@ export default function SolicitudesScreen() {
             Authorization: `Bearer ${userToken}`,
           },
         });
-        setRequest(response.data);
-        console.log(response.data[0]);
+        setRequests(response.data);
       } catch (err: any) {
-        setError(err.message || "Failed to fetch request.");
+        setError(err.message || "Failed to fetch requests.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRequest();
+    fetchRequests();
   }, []);
 
-  const toggleExpand = (requestId: string) => {
-    setExpandedRequestId((prevId) => (prevId === requestId ? null : requestId));
-  };
+  const renderRequestCard = ({ item }: { item: Request }) => (
+    <View style={[styles.card, { backgroundColor: cardBackgroundColor }]}>
+      <View style={styles.cardHeader}>
+        <Text style={[styles.cardTitle, { color: textColor }]}>{item.title}</Text>
+        <Text style={[styles.cardPrice, { color: textColor }]}>RD$ {parseFloat(item.price).toLocaleString()}</Text>
+      </View>
+      <View style={styles.cardBody}>
+        <FontAwesome name="map-marker" size={16} color={secondaryTextColor} style={styles.icon} />
+        <Text style={[styles.cardDistance, { color: secondaryTextColor }]}>{parseFloat(item.distance_km).toFixed(1)} km away</Text>
+      </View>
+      <View style={styles.cardActions}>
+        <Pressable
+          style={[styles.button, { backgroundColor: buttonBackgroundColorDetalle }]}
+          onPress={() => router.push({ pathname: "/modal", params: { requestId: item.id, flow: "requestDetails" } })} // Assuming a modal for details
+        >
+          <Text style={[styles.buttonText, { color: buttonTextColor }]}>Ver Detalles</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.button, { backgroundColor: buttonBackgroundColor }]}
+          onPress={() => router.push({ pathname: "/modal", params: { requestId: item.id, flow: "makeOffer" } })} // Assuming a modal for making offers
+        >
+          <Text style={[styles.buttonText, { color: buttonTextColor }]}>Hacer Ofertas</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
 
   if (loading) {
-  // if (loading) {
     return (
-    <LinearGradient
-      colors={[gradientStart, gradientEnd]}
-      style={{ flex: 1 }}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-    >
-
-
-          <View style={[styles.container,{borderRadius: 10}]}>
-                <Text style={{ color: textColor, fontSize: 26, fontWeight: 'bold' }}>Cargando solicitudes...</Text>
-                <ActivityIndicator size="large" color={textColor} />
-              </View>
-            <BottomNavigationBar/>
+      <LinearGradient
+        colors={[gradientStart, gradientEnd]}
+        style={styles.fullScreenContainer}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View style={styles.loadingContainer}>
+          <Text style={{ color: textColor, fontSize: 20, marginBottom: 10 }}>Cargando solicitudes...</Text>
+          <ActivityIndicator size="large" color={textColor} />
+        </View>
+        <BottomNavigationBar />
       </LinearGradient>
     );
   }
@@ -165,11 +153,14 @@ export default function SolicitudesScreen() {
     return (
       <LinearGradient
         colors={[gradientStart, gradientEnd]}
-        style={styles.container}
+        style={styles.fullScreenContainer}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <Text style={{ color: AppColors.text.light }}>Error: {error}</Text>
+        <View style={styles.errorContainer}>
+          <Text style={{ color: textColor, fontSize: 18 }}>Error: {error}</Text>
+        </View>
+        <BottomNavigationBar />
       </LinearGradient>
     );
   }
@@ -177,174 +168,115 @@ export default function SolicitudesScreen() {
   return (
     <LinearGradient
       colors={[gradientStart, gradientEnd]}
-      style={{ flex: 1 }}
+      style={styles.fullScreenContainer}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
-      <View style={styles.container}>
-        <Text style={[styles.title, { color: textColor }]}>Solicitudes Creadas</Text>
-        {request.length === 0 ? (
-          <View style={[styles.container]}>
-            <View>
-              <Text style={{ color: textColor, fontSize: 26, fontWeight: 'bold' }}>No hay solicitudes creadas.</Text>
-            </View>
-          </View>
-        ) : (
-          <FlatList
-          data={request}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => {
-            const isExpanded = item.id === expandedRequestId;
-            <Text style={[styles.title, { color: textColor }]}>Solicitudes Creadas</Text>
-            return (
-              <Pressable onPress={() => toggleExpand(item.id)} style={[styles.requestCard,]}>
-                  <LinearGradient
-                   colors={[bgGradientStart, bgGradientEnd, itemBackgroundColor]}
-                   style={[styles.container,{borderRadius: 10}]}
-                   start={{ x: 1, y: -1 }}
-                   end={{ x: 0, y: 0 }}
-                 >
-                  <View style={[styles.cardHeader]}>
-                    <View style={[styles.statusBadge, { backgroundColor: item.status === 'pending' ? AppColors.status.pending : (item.status === 'completed' ? AppColors.status.completed : AppColors.status.default) }]}>
-                      <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
-                    </View>
-                    <View style={[styles.detailCard, { backgroundColor: secondaryCardsRequestBackgroundColor , borderColor: borderColor}]}>
-                      <Text style={[styles.requestTitle, { color: textColor }]}>{item.title}.</Text>
-                    </View>
-                  </View>
-                  <View style={[styles.detailCard, { backgroundColor: secondaryCardsRequestBackgroundColor , borderColor: borderColor}]}>
-                   <FontAwesome name="money" size={20} color={AppColors.status.completed} style={styles.detailIcon} />
-                  <Text style={[styles.requestPrice, { color: AppColors.status.completed }]}>RD$ {item.price}</Text>
-                  </View>
-                  {isExpanded && (
-                    <View style={styles.detailsContainer}>
-                      <View style={[styles.detailCard, { backgroundColor: secondaryCardsRequestBackgroundColor , borderColor: borderColor}]}>
-                        <FontAwesome name="calendar" size={20} color={textColor} style={styles.detailIcon} />
-                        <View>
-                          <Text style={[styles.requestDetailLabel, { color: textColor }]}>Fecha y Hora del Evento</Text>
-                          <Text style={[styles.requestDetail, { color: textColor }]}>
-                            {new Date(item.event_date).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                          </Text>
-                          <Text style={[styles.requestDetail, { color: textColor,}]}>
-                            De {new Date(`2000-01-01T${item.start_time}`).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                            {' '}
-                            a {new Date(`2000-01-01T${item.end_time}`).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                          </Text>
-                        </View>
-                      </View>
-                      <View style={[styles.detailCard, { backgroundColor: secondaryCardsRequestBackgroundColor , borderColor: borderColor}]}>
-                        <FontAwesome name="tag" size={20} color={textColor} style={styles.detailIcon} />
-                        <View>
-                          <Text style={[styles.requestDetailLabel, { color: textColor }]}>Categoría</Text>
-                          <Text style={[styles.requestDetail, { color: textColor }]}>{item.category}</Text>
-                        </View>
-                      </View>
-                      <View style={[styles.detailCard, { backgroundColor: secondaryCardsRequestBackgroundColor , borderColor: borderColor}]}>
-                        <FontAwesome name="info-circle" size={20} color={textColor} style={styles.detailIcon} />
-                        <View style={{flex: 1}}>
-                          <Text style={[styles.requestDetailLabel, { color: textColor }]}>Descripción</Text>
-                          <Text style={[styles.requestDetail, { color: textColor }]}>{item.description}</Text>
-                        </View>
-                      </View>
-                    </View>
-                  )}
-                  </LinearGradient>
-                </Pressable>
-              );
-            }}
-          />
-        )}
-        <BottomNavigationBar />
+      <View style={styles.headerContainer}>
+        <Text style={[styles.screenTitle, { color: textColor }]}>Available Requests</Text>
       </View>
+      {requests.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={{ color: textColor, fontSize: 20 }}>No hay solicitudes disponibles.</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={requests}
+          keyExtractor={(item) => item.id}
+          renderItem={renderRequestCard}
+          contentContainerStyle={styles.listContentContainer}
+        />
+      )}
+      <BottomNavigationBar />
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    paddingBottom: 80, // Espacio para la barra de navegación inferior
-    marginTop: 20,
-  },
-  Container: {
+  fullScreenContainer: {
     flex: 1,
   },
-  title: {
-    flex:1,
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
+  headerContainer: {
+    paddingTop: 60,
+    paddingBottom: 20,
+    alignItems: "center",
   },
-  requestCard: {
-    // flex:1,
-    borderRadius: 12,
+  screenTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+  },
+  listContentContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 100, // Space for bottom navigation
+  },
+  card: {
+    borderRadius: 15,
     padding: 20,
-    marginBottom: 12,
-    width: '100%',
-    shadowColor: '#000',
+    marginBottom: 15,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
+    elevation: 8, // For Android shadow
   },
   cardHeader: {
-    // flex:1,
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    // marginBottom: 5,
-  },
-  statusBadge: {
-    borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  statusText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 8,
-  },
-  requestTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  requestRefClient: {
-    fontSize: 13,
-    opacity: 0.6,
-    marginTop: 4,
-  },
-  requestPrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
-  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 10,
   },
-  requestDetailLabel: {
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  requestDetail: {
-    fontSize: 15,
-  },
-  detailsContainer: {
-    // marginTop: 4,
-  },
-  detailCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    borderBottomWidth: 1,
-  },
-  detailIcon: {
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    flexShrink: 1, // Allow text to wrap
     marginRight: 10,
+  },
+  cardPrice: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  cardBody: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  icon: {
+    marginRight: 5,
+  },
+  cardDistance: {
+    fontSize: 14,
+  },
+  cardActions: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  button: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    minWidth: 120,
+    alignItems: "center",
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingBottom: 80, // Adjust for bottom nav bar
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingBottom: 80, // Adjust for bottom nav bar
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingBottom: 80, // Adjust for bottom nav bar
   },
 });

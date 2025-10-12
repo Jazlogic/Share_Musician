@@ -226,8 +226,16 @@ VALUES
     NOW (),
     NULL
   );
+  update request set musician_id = (SELECT user_id FROM users WHERE email = 'musico@example.com'), distance_km = '10.5', price = '5545', location = CASE WHEN jsonb_typeof(location) = 'object' THEN jsonb_set(location, '{distance_km}', '10.5'::jsonb) ELSE jsonb_build_object('distance_km', '10.5'::jsonb) END where title = 'Música para Boda Navideña';
+  update request set musician_id = (SELECT user_id FROM users WHERE email = 'musico@example.com'), distance_km = '13.8', price = '2150', location = CASE WHEN jsonb_typeof(location) = 'object' THEN jsonb_set(location, '{price}', '2150'::jsonb) ELSE jsonb_build_object('price', '2150'::jsonb) END where title = 'Música para Boda Navideña';
 
-  select * from request;
+  
+select * from request;
+
+select 
+  price as Precio,
+  distance_km as Distancia 
+    from request;
 
 -- Datos de prueba para instrumentos de solicitud 2025-10-10  5:08 p.m. JASBOOTSTUDIOS
 -- Asocia instrumentos específicos a la solicitud de ejemplo.
