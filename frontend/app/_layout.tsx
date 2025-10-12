@@ -29,6 +29,7 @@ export default function RootLayout() {
               <Stack.Screen name="register" options={{ headerShown: false }} />
               <Stack.Screen name="verify-email" options={{ headerShown: false }} />
               <Stack.Screen name="set-password" options={{ headerShown: false }} />
+              <Stack.Screen name="request-password-reset" options={{ headerShown: false }} />
               <Stack.Screen name="home" options={{ headerShown: false }} />
               <Stack.Screen name="settings" options={{ headerShown: false }} />
               <Stack.Screen name="wallet" options={{ headerShown: false }} />
