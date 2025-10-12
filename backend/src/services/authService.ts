@@ -270,17 +270,29 @@ export const resetPassword = async (token: string, newPassword: string): Promise
   try {
     await client.query('BEGIN');
 
+    console.log("Resetting password - Received token:", token);
+    console.log("Resetting password - New password:", newPassword);
+
+    console.log("Resetting password - Executing query to find user...");
     const userResult = await client.query(
-      'SELECT user_id, reset_password_expires_at FROM users WHERE reset_password_token = $1',
+      `
+      SELECT user_id, reset_password_token, reset_password_expires_at
+      FROM users
+      WHERE reset_password_token = $1 AND reset_password_expires_at > NOW()
+      `,
       [token]
     );
+    console.log("Resetting password - Query executed. User result rows:", userResult.rows);
+
     const user = userResult.rows[0];
 
     if (!user) {
+      console.log('Resetting password - No user found or token invalid/expired in query.');
       throw new Error('Token de restablecimiento de contraseña inválido.');
     }
 
     if (new Date() > new Date(user.reset_password_expires_at)) {
+      console.log('Resetting password - Token expired after retrieval.');
       throw new Error('El token de restablecimiento de contraseña ha expirado.');
     }
 
@@ -299,9 +311,49 @@ export const resetPassword = async (token: string, newPassword: string): Promise
     );
 
     await client.query('COMMIT');
-  } catch (error) {
+    console.log('Resetting password - Password reset successfully and token cleared.');
+  } catch (error: any) {
     await client.query('ROLLBACK');
+    console.error('Resetting password - Error during password reset:', error.message);
     throw error;
+  } finally {
+    client.release();
+    console.log('Resetting password - Client released.');
+  }
+};
+
+export const verifyResetCode = async (email: string, code: string): Promise<void> => {
+  const normalizedEmail = email.trim().toLowerCase();
+  const client = await pool.connect();
+  try {
+    console.log('Verifying reset code for email:', normalizedEmail);
+    console.log('Received code:', code);
+
+    const userResult = await client.query(
+      'SELECT reset_password_token, reset_password_expires_at FROM users WHERE email = $1',
+      [normalizedEmail]
+    );
+    const user = userResult.rows[0];
+
+    if (!user) {
+      console.log('User not found for email:', normalizedEmail);
+      throw new Error('Usuario no encontrado.');
+    }
+
+    console.log('Stored reset_password_token:', user.reset_password_token);
+    console.log('Stored reset_password_expires_at:', user.reset_password_expires_at);
+
+    if (user.reset_password_token !== code) {
+      console.log('Code mismatch: Stored vs Received', user.reset_password_token, code);
+      throw new Error('Código de verificación inválido.');
+    }
+
+    if (new Date() > new Date(user.reset_password_expires_at)) {
+      console.log('Code expired. Current time:', new Date(), 'Expires at:', user.reset_password_expires_at);
+      throw new Error('El código de verificación ha expirado.');
+    }
+
+    // Si todo es válido, no se necesita hacer nada más que resolver la promesa.
   } finally {
     client.release();
   }

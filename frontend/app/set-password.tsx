@@ -14,6 +14,7 @@ export default function SetPasswordScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isCodeVerified, setIsCodeVerified] = useState(false); // Nuevo estado para controlar la verificación del código
   const router = useRouter();
   const { refreshUser } = useUser();
 
@@ -24,16 +25,36 @@ export default function SetPasswordScreen() {
     if (codeParam) {
       setCode(codeParam as string);
     }
+    // Si ambos parámetros están presentes, intentar verificar el código automáticamente
+    if (emailParam && codeParam) {
+      handleVerifyCode(emailParam as string, codeParam as string);
+    }
   }, [emailParam, codeParam]);
+
+  const handleVerifyCode = async (emailToVerify: string, codeToVerify: string) => {
+    try {
+      const response = await api.post<MessageResponse>('/auth/verify-reset-code', { email: emailToVerify, code: codeToVerify });
+      if (response.status === 200) {
+        Alert.alert('Éxito', response.data.message);
+        setIsCodeVerified(true);
+      } else {
+        Alert.alert('Error', response.data.message || 'Código de verificación inválido.');
+        setIsCodeVerified(false);
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.message || 'No se pudo verificar el código. Inténtalo de nuevo.');
+      setIsCodeVerified(false);
+    }
+  };
 
   const handleSetPassword = async () => {
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match.');
+      Alert.alert('Error', 'Las contraseñas no coinciden.');
       return;
     }
 
     try {
-      const response = await api.post<MessageResponse>('/auth/set-password', { email, code, password });
+      const response = await api.post<MessageResponse>('/auth/reset-password', { token: code, newPassword: password });
       if (response.status === 200) {
         Alert.alert('Contraseña establecida', response.data.message);
         if (response.data.user && response.data.user.name && response.data.user.user_id && response.data.token) {
@@ -83,49 +104,61 @@ export default function SetPasswordScreen() {
             editable={!codeParam} // Make code editable only if not passed as param
           />
         )}
-        <View style={styles.passwordInputContainer}>
-          <TextInput
-            style={styles.passwordInput}
-            placeholder="Nueva contraseña"
-            placeholderTextColor="#A9A9A9"
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={setPassword}
-          />
-          <TouchableOpacity
-            style={styles.togglePasswordButton}
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            <Ionicons
-              name={showPassword ? 'eye-off' : 'eye'}
-              size={24}
-              color="#A9A9A9"
-            />
+
+        {!isCodeVerified && email && !codeParam && (
+          <TouchableOpacity style={styles.setPasswordButton} onPress={() => handleVerifyCode(email, code)}>
+            <Text style={styles.setPasswordButtonText}>VERIFICAR CÓDIGO</Text>
           </TouchableOpacity>
-        </View>
-        <View style={styles.passwordInputContainer}>
-          <TextInput
-            style={styles.passwordInput}
-            placeholder="Confirmar nueva contraseña"
-            placeholderTextColor="#A9A9A9"
-            secureTextEntry={!showPassword}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-          />
-          <TouchableOpacity
-            style={styles.togglePasswordButton}
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            <Ionicons
-              name={showPassword ? 'eye-off' : 'eye'}
-              size={24}
-              color="#A9A9A9"
-            />
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity style={styles.setPasswordButton} onPress={handleSetPassword}>
-          <Text style={styles.setPasswordButtonText}>ESTABLECER CONTRASEÑA</Text>
-        </TouchableOpacity>
+        )}
+
+        {isCodeVerified && (
+          <>
+            <View style={styles.passwordInputContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Nueva contraseña"
+                placeholderTextColor="#A9A9A9"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TouchableOpacity
+                style={styles.togglePasswordButton}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={24}
+                  color="#A9A9A9"
+                />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.passwordInputContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Confirmar nueva contraseña"
+                placeholderTextColor="#A9A9A9"
+                secureTextEntry={!showPassword}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+              />
+              <TouchableOpacity
+                style={styles.togglePasswordButton}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={24}
+                  color="#A9A9A9"
+                />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.setPasswordButton} onPress={handleSetPassword}>
+              <Text style={styles.setPasswordButtonText}>ESTABLECER CONTRASEÑA</Text>
+            </TouchableOpacity>
+          </>
+        )}
+
         <View style={styles.linksContainer}>
           <Link href="/" asChild>
             <TouchableOpacity>

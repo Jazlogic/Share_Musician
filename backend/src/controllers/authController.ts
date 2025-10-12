@@ -18,6 +18,7 @@ import {
   requestPasswordReset,
   // Esta es la funcion que recibe como parametros (token: string, password: string) para restablecer la contraseña de un usuario que ha solicitado un restablecimiento.
   resetPassword,
+  verifyResetCode
 } from "../services/authService";
 
 /**
@@ -584,5 +585,57 @@ export const resetPasswordController = async (req: Request, res: Response) => {
     // Registra cualquier otro error inesperado en la consola.
     console.error("Error resetting password:", error);
     res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+/**
+ * @swagger
+ * /auth/verify-reset-code:
+ *   post:
+ *     summary: Verifica la validez de un código de restablecimiento de contraseña.
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Correo electrónico del usuario.
+ *               code:
+ *                 type: string
+ *                 description: Código de verificación recibido.
+ *             required:
+ *               - email
+ *               - code
+ *     responses:
+ *       200 OK:
+ *         description: Código de verificación válido.
+ *       400 Bad Request:
+ *         description: Código inválido o expirado.
+ *       500 Internal Server Error:
+ *         description: Error del servidor.
+ */
+/**
+ * @function verifyResetCodeController
+ * @description Controlador para verificar la validez de un código de restablecimiento de contraseña.
+ *              Recibe un correo electrónico y un código, y verifica si el código es válido y no ha expirado.
+ * @param {Request} req - Objeto de solicitud de Express, esperando `email` y `code` en el cuerpo.
+ * @param {Response} res - Objeto de respuesta de Express.
+ * @returns {Promise<void>} Una promesa que resuelve después de intentar verificar el código.
+ */
+export const verifyResetCodeController = async (req: Request, res: Response) => {
+  const { email, code } = req.body;
+
+  try {
+    await verifyResetCode(email, code);
+    res.status(200).json({ message: 'Código de verificación válido.' });
+  } catch (error: any) {
+    console.error('Error verifying reset code:', error);
+    res.status(400).json({ message: error.message || 'Código inválido o expirado.' });
   }
 };

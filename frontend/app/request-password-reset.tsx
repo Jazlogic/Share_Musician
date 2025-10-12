@@ -20,7 +20,7 @@ export default function RequestPasswordResetScreen() {
       const response = await api.post<MessageResponse>('/auth/request-password-reset', { email });
       if (response.status === 200) {
         Alert.alert('Correo enviado', response.data.message || 'Se ha enviado un correo electrónico con instrucciones para restablecer tu contraseña.');
-        router.push('/set-password'); // Redirigir a la pantalla para establecer la contraseña
+        router.push({ pathname: '/set-password', params: { email } }); // Redirigir a la pantalla para establecer la contraseña con el email
       } else {
         Alert.alert('Error', response.data.message || 'Algo salió mal al solicitar el restablecimiento de contraseña.');
       }
