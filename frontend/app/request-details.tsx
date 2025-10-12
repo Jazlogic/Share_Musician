@@ -127,73 +127,98 @@ export default function RequestDetailsScreen() {
 
   // Renderiza la interfaz de usuario una vez que los datos de la solicitud están disponibles.
   return (
+    // Componente LinearGradient para el fondo de la pantalla, proporcionando un degradado de color.
     <LinearGradient
       colors={[gradientStart, gradientEnd]}
       style={{ flex: 1 }}
     >
+      {/* Configuración de la pantalla de navegación, ocultando el encabezado por defecto. */}
       <Stack.Screen
         options={{ title: "Request Details", headerShown: false }}
       />
+      {/* Contenedor principal con ScrollView para permitir el desplazamiento del contenido. */}
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
+        
+        {/* Contenedor para el título de la sección, centrado. */}
         <View style={styles.titleContainer}>
-          <Text style={[styles.sectionTitle, { color }]}>Detalles de la Solicitud</Text>
+          {/* <Text style={[styles.sectionTitle, { color }]}>Detalles de la Solicitud</Text> */}
         </View>
+       {/* Tarjeta de balance con un degradado lineal, mostrando el título de la solicitud y el precio. */}
        <LinearGradient
           colors={[gradientStart, gradientEnd]}
           style={styles.balanceCard}
           >
+          {/* Sección para el título de la solicitud. */}
           <View style={[styles.section]}>
           <Text style={[styles.sectionTitle, { color }]}>{request.title}</Text>
         </View>
+          {/* Título para la tarifa. */}
           <Text style={[styles.balanceTitle, { color, marginTop: 10}]}>Tarifa</Text>
-          <Text style={[styles.price, { color }]}>RD$ {request.price}</Text>
-
-
+          {/* Precio de la solicitud. */}
+          <Text style={[styles.price, { color:'rgb(31, 203, 91)' }]}>RD$ {request.price}</Text>
         </LinearGradient>
-           
+           {/* Sección de la Informacion Musical */}
           <View style={[styles.addMethodButton,{borderBottomColor:AppColors.text.white,borderBottomWidth:1,marginBottom:10,borderRadius:10}]}>
             <Text style={[styles.addMethodButtonText, { color: AppColors.text.white }]}>Informacion Musical</Text>
           </View>
+            {/* Muestra los instrumentos musicales requeridos. */}
             <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
                <Ionicons name="musical-notes" size={24} color={AppColors.text.white} />
               <Text style={[styles.itemsText, { color: itemTextColor }]}>{request.instruments.join(', ')}</Text>
             </View>
+            {/* Muestra la categoría de la solicitud. */}
             <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
                <Ionicons name="folder" size={24} color={AppColors.text.white} />
               <Text style={[styles.itemsText, { color: itemTextColor }]}> {request.category}</Text>
             </View>
+
+            {/* Sección de la Informacion de ubicación */}
           <View style={[styles.addMethodButton,{borderBottomColor:AppColors.text.white,borderBottomWidth:1,marginBottom:10,borderRadius:10}]}>
             <Text style={[styles.addMethodButtonText, { color: AppColors.text.white }]}>Informacion de ubicación</Text>
           </View>
+            {/* Muestra la ubicación del evento. */}
             <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
                <Ionicons name="location" size={24} color={AppColors.text.white} />
               <Text style={[styles.itemsText, { color: itemTextColor }]}>{request.location}</Text>
             </View>
+            {/* Muestra la distancia en kilómetros. */}
             <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
                <Ionicons name="car" size={24} color={AppColors.text.white} />
               <Text style={[styles.itemsText, { color: itemTextColor }]}>{request.distance_km ? `${request.distance_km} km` : 'N/A'}</Text>
             </View>
+
+            {/* Sección de la Informacion del tiempo */}
           <View style={[styles.addMethodButton,{borderBottomColor:AppColors.text.white,borderBottomWidth:1,marginBottom:10,borderRadius:10}]}>
             <Text style={[styles.addMethodButtonText, { color: AppColors.text.white }]}>Informacion del tiempo</Text>
           </View>
+            {/* Muestra la fecha del evento. */}
             <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
                <Ionicons name="calendar" size={24} color={AppColors.text.white} />
-              <Text style={[styles.itemsText, { color: itemTextColor }]}>{new Date(request.event_date).toLocaleDateString()}</Text>
+              <Text style={[styles.itemsText, { color: itemTextColor }]}>Fecha del evento ► {new Date(request.event_date).toLocaleDateString()}</Text>
             </View>
+            {/* Muestra la hora de inicio del evento en formato AM/PM. */}
             <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
                <Ionicons name="time" size={24} color={AppColors.text.white} />
-              <Text style={[styles.itemsText, { color: itemTextColor }]}>{`${request.start_time} - ${request.end_time}`}</Text>
+              <Text style={[styles.itemsText, { color: itemTextColor }]}>Hora de inicio ► {new Date(`2000-01-01T${request.start_time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</Text>
             </View>
+            {/* Muestra la hora de finalización del evento en formato AM/PM. */}
+            <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
+               <Ionicons name="time" size={24} color={AppColors.text.white} />
+              <Text style={[styles.itemsText, { color: itemTextColor }]}>Hora de fin ► {new Date(`2000-01-01T${request.end_time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</Text>
+            </View>
+            {/* Muestra el estado actual de la solicitud. */}
             <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
                <Ionicons name="checkmark-circle" size={24} color={AppColors.text.white} />
               <Text style={[styles.itemsText, { color: itemTextColor }]}>{request.status}</Text>
             </View>
+            {/* Muestra la fecha de creación de la solicitud. */}
             <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
                <Ionicons name="create" size={24} color={AppColors.text.white} />
-              <Text style={[styles.itemsText, { color: itemTextColor }]}>{new Date(request.created_at).toLocaleDateString()}</Text>
+              <Text style={[styles.itemsText, { color: itemTextColor }]}>Fecha de creación ► {new Date(request.created_at).toLocaleDateString()}</Text>
             </View>
 
       </ScrollView>
+     {/* Barra de navegación inferior. */}
      <BottomNavigationBar/>
     </LinearGradient>
   );
