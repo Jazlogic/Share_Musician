@@ -45,6 +45,8 @@ export const useRequestCalculations = (form: RequestFormState) => {
       }
       const durationInHours = (form.end_time.getTime() - form.start_time.getTime()) / (1000 * 60 * 60);
       if (durationInHours > 0) {
+        // Lógica de cálculo de precio
+        // TODO: Integrar precio base + tarifas por instrumento + ajustes por duración
         price += durationInHours * 20; // Price per hour
       }
       price += form.tip;
@@ -56,3 +58,6 @@ export const useRequestCalculations = (form: RequestFormState) => {
 
   return { predictedDuration, dynamicPrice };
 };
+
+// Predicción de duración
+// TODO: Mejorar con modelo basado en event_type y category (actual: lógica estática)

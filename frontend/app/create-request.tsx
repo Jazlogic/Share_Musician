@@ -56,17 +56,17 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function CreateRequestScreen() {
   const { user } = useUser();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<{ id: string; name: string } | undefined>(undefined);
+  const [title, setTitle] = useState(''); // TODO: Implementar sugerencias inteligentes para el título.
+  const [description, setDescription] = useState(''); // TODO: Implementar sugerencias inteligentes para la descripción.
+  const [selectedCategory, setSelectedCategory] = useState<{ id: string; name: string } | undefined>(undefined); // TODO: Cargar categorías dinámicamente y manejar la selección.
   const [instrument, setInstrument] = useState('');
-  const [location, setLocation] = useState(''); // New state for location
+  const [location, setLocation] = useState(''); // New state for location // TODO: Mejorar la entrada de ubicación con autocompletado o selección de mapa.
   const [isCategoryModalVisible, setCategoryModalVisible] = useState(false);
   const [eventTypes, setEventTypes] = useState<{ id: string; name: string }[]>([]);
-  const [eventDate, setEventDate] = useState('');
-  const [startTime, setStartTime] = useState(new Date());
-  const [endTime, setEndTime] = useState(new Date());
-  const [price, setPrice] = useState('0');
+  const [eventDate, setEventDate] = useState(''); // TODO: Validar que la fecha del evento sea futura.
+  const [startTime, setStartTime] = useState(new Date()); // TODO: Validar que la hora de inicio sea lógica.
+  const [endTime, setEndTime] = useState(new Date()); // TODO: Validar que la hora de fin sea posterior a la de inicio.
+  const [price, setPrice] = useState('0'); // TODO: Mostrar un resumen de precios más detallado.
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [timePickerMode, setTimePickerMode] = useState<'start' | 'end'>('start'); // 'start' or 'end'
@@ -142,7 +142,7 @@ export default function CreateRequestScreen() {
     }
 
     if (!title || !description || !selectedCategory || !instrument || !eventDate || !startTime || !endTime || !price) {
-      Alert.alert('Error', 'Por favor, completa todos los campos obligatorios.');
+      Alert.alert('Error', 'Por favor, completa todos los campos obligatorios.'); // TODO: Validar campos individualmente y mostrar feedback visual.
       return;
     }
 
@@ -214,7 +214,7 @@ export default function CreateRequestScreen() {
     setShowTimePicker(true);
   };
 
-  const dynamicStyles = StyleSheet.create({
+  const dynamicStyles = StyleSheet.create({ // TODO: Refactorizar dynamicStyles para evitar duplicación y mejorar la legibilidad. Considerar mover fuera del componente para optimización.
     formContainer: {
       width: '90%',
       backgroundColor: backgroundColor,
@@ -310,7 +310,7 @@ export default function CreateRequestScreen() {
           <Text style={[styles.headerTitle, { color: textColor }]}>Crear Solicitud</Text>
         </View>
 
-        <View style={dynamicStyles.formContainer}>
+        <View style={dynamicStyles.formContainer}> {/* TODO: Asegurar que el diseño del formulario sea responsivo y accesible en diferentes dispositivos. */}
           {/* Titulo de la solicitud */}
           <View style={styles.inputGroup}>
             <FontAwesome name="pencil" size={20} color={tintColor} style={styles.inputIcon} />
@@ -510,7 +510,7 @@ export default function CreateRequestScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create({ // TODO: Considerar mover dynamicStyles fuera del componente para optimización y evitar re-renders innecesarios.
   container: {
     flex: 1,
   },
