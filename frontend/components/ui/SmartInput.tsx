@@ -45,22 +45,18 @@ export default function SmartInput({
   const shadowColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
 
   useEffect(() => {
-    if (autoComplete && suggestions.length > 0) {
+    if (autoComplete && suggestions.length > 0 && showSuggestions) {
       if (value.length > 0) {
         const filtered = suggestions.filter(suggestion =>
           suggestion.toLowerCase().includes(value.toLowerCase())
         );
         setFilteredSuggestions(filtered.slice(0, 5)); // Mostrar máximo 5 sugerencias
-        setShowSuggestions(filtered.length > 0);
       } else {
         // Si no hay texto, mostrar las primeras 5 sugerencias
         setFilteredSuggestions(suggestions.slice(0, 5));
-        setShowSuggestions(true);
       }
-    } else {
-      setShowSuggestions(false);
     }
-  }, [value, suggestions, autoComplete]);
+  }, [value, suggestions, autoComplete, showSuggestions]);
 
   const handleSuggestionPress = (suggestion: string) => {
     onChangeText(suggestion);
@@ -77,11 +73,16 @@ export default function SmartInput({
         setFilteredSuggestions(filtered.slice(0, 5));
         setShowSuggestions(filtered.length > 0);
       } else {
-        // Si está vacío, mostrar las primeras 5 sugerencias
+        // Si está vacío, mostrar las primeras 5 sugerencias solo al hacer focus
         setFilteredSuggestions(suggestions.slice(0, 5));
         setShowSuggestions(true);
       }
     }
+  };
+
+  const handleBlur = () => {
+    // Ocultar sugerencias después de un pequeño delay para permitir tocar una sugerencia
+    setTimeout(() => setShowSuggestions(false), 300);
   };
 
   return (
@@ -109,7 +110,7 @@ export default function SmartInput({
           multiline={multiline}
           keyboardType={keyboardType}
           onFocus={handleFocus}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 300)}
+          onBlur={handleBlur}
         />
       </View>
 

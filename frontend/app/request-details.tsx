@@ -22,6 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { ScrollView } from "react-native-gesture-handler";
 import BottomNavigationBar from "../components/BottomNavigationBar";
+import { useRouter } from "expo-router";
 
 interface Request {
   id: string;
@@ -30,12 +31,12 @@ interface Request {
   title: string;
   description: string;
   category: string;
-  location: string;
+  location: string | object; // Can be string or object
   distance_km: number | null;
   event_date: string;
   start_time: string;
   end_time: string;
-  price: number | null;
+  price: number | null | object; // Can be number or object
   status: string;
   created_at: string;
   updated_at: string;
@@ -50,6 +51,7 @@ interface Request {
 export default function RequestDetailsScreen() {
   // Obtiene el parámetro `id` de la URL local, que representa el ID de la solicitud.
   const { id } = useLocalSearchParams();
+  const router = useRouter();
   // Estado para almacenar los detalles de la solicitud, inicializado como nulo.
   const [request, setRequest] = useState<Request | null>(null);
   // Estado para controlar el indicador de carga, inicializado en `true`.
@@ -73,18 +75,22 @@ export default function RequestDetailsScreen() {
       // Función asíncrona para obtener los detalles de la solicitud desde la API.
       const fetchRequestDetails = async () => {
         try {
-          let a = 1;
-          console.log(a);
           // Realiza una llamada a la API para obtener la solicitud por su ID.
           const response = await api.getRequestById<Request>(`${id}`);
-          console.log('Request Details:',response.data);
+          console.log('Request Details:', response.data);
           // Actualiza el estado `request` con los datos recibidos.
           setRequest(response.data);
-        } catch (err) {
-          // Si ocurre un error, establece el mensaje de error.
-          setError("Error al cargar los detalles de la solicitud.");
+        } catch (err: any) {
+          // Si ocurre un error, establece el mensaje de error específico.
+          if (err.message && err.message.includes('404')) {
+            setError("La solicitud solicitada no existe o ha sido eliminada.");
+          } else if (err.message && err.message.includes('Request not found')) {
+            setError("No se encontró la solicitud solicitada.");
+          } else {
+            setError("Error al cargar los detalles de la solicitud. Verifique su conexión a internet.");
+          }
           // Registra el error en la consola para depuración.
-          console.error(err);
+          console.error('Error fetching request details:', err);
         } finally {
           // Independientemente del resultado, desactiva el indicador de carga.
           setLoading(false);
@@ -110,9 +116,28 @@ export default function RequestDetailsScreen() {
   // Muestra un mensaje de error si algo salió mal durante la carga.
   if (error) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
+      <LinearGradient
+        colors={[gradientStart, gradientEnd]}
+        style={{ flex: 1 }}
+      >
+        <Stack.Screen
+          options={{ title: "Error", headerShown: false }}
+        />
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle" size={64} color={AppColors.secondary.red} />
+          <Text style={[styles.errorText, { color, marginTop: 20, textAlign: 'center' }]}>
+            {error}
+          </Text>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: AppColors.primary.blue, marginTop: 30 }]}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={20} color="white" />
+            <Text style={styles.backButtonText}>Volver</Text>
+          </TouchableOpacity>
+        </View>
+        <BottomNavigationBar />
+      </LinearGradient>
     );
   }
 
@@ -157,7 +182,7 @@ export default function RequestDetailsScreen() {
           {/* Título para la tarifa. */}
           <Text style={[styles.balanceTitle, { color, marginTop: 10}]}>Tarifa</Text>
           {/* Precio de la solicitud. */}
-          <Text style={[styles.price, { color:'rgb(31, 203, 91)' }]}>RD$ {request.price}</Text>
+          <Text style={[styles.price, { color:'rgb(31, 203, 91)' }]}>RD$ {typeof request.price === 'number' ? request.price.toLocaleString() : '0'}</Text>
         </LinearGradient>
            {/* Sección de la Informacion Musical */}
           <View style={[styles.addMethodButton,{borderBottomColor:AppColors.text.white,borderBottomWidth:1,marginBottom:10,borderRadius:10}]}>
@@ -181,7 +206,14 @@ export default function RequestDetailsScreen() {
             {/* Muestra la ubicación del evento. */}
             <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
                <Ionicons name="location" size={24} color={AppColors.text.white} />
-              <Text style={[styles.itemsText, { color: itemTextColor }]}>{request.location}</Text>
+              <Text style={[styles.itemsText, { color: itemTextColor }]}>
+                {typeof request.location === 'string' 
+                  ? request.location 
+                  : typeof request.location === 'object' && request.location !== null
+                    ? (request.location as any).address || 'Ubicación no especificada'
+                    : 'Ubicación no especificada'
+                }
+              </Text>
             </View>
             {/* Muestra la distancia en kilómetros. */}
             <View style={[styles.itemsCard, { backgroundColor: backgrounIitemColor }]}>
@@ -352,5 +384,29 @@ const styles = StyleSheet.create({
   transactionAmount: {
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  backButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });
