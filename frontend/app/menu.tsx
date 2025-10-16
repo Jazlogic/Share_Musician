@@ -142,7 +142,31 @@ export default function MenuScreen() {
                   <Text
                     style={[styles.menuItemText, { color: menuTitleColor }]}
                   >
-                    Crear Solicitudes
+                    Crear Solicitud (Clásico)
+                  </Text>
+                  <Ionicons
+                    name="chevron-forward-outline"
+                    size={24}
+                    color={menuTitleColor}
+                  />
+                </TouchableOpacity>
+              </Link>
+              <Link
+                style={[styles.menuItem, { backgroundColor }]}
+                href="/create-request-optimized"
+                asChild
+              >
+                <TouchableOpacity style={styles.menuItem}>
+                  <Ionicons
+                    name="sparkles-outline"
+                    size={20}
+                    color={menuTitleColor}
+                    style={styles.dropdownItemIcon}
+                  />
+                  <Text
+                    style={[styles.menuItemText, { color: menuTitleColor }]}
+                  >
+                    Crear Solicitud (Optimizado) ⭐
                   </Text>
                   <Ionicons
                     name="chevron-forward-outline"

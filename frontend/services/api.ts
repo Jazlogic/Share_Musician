@@ -102,5 +102,27 @@ export const api = {
   delete: <T>(url: string, options?: RequestOptions) => request<T>(url, { ...options, method: 'DELETE' }),
   upload: <T>(url: string, formData: FormData, options?: RequestOptions) =>
     uploadRequest<T>(url, formData, { ...options, method: 'POST' }),
+  
+  // Request endpoints
   getRequestById: <T>(id: string, options?: RequestOptions) => api.get<T>(`/request/${id}`, options),
+  getEventTypes: <T>(options?: RequestOptions) => api.get<T>('/request/event-types', options),
+  getInstruments: <T>(options?: RequestOptions) => api.get<T>('/request/instruments', options),
+  getCreatedRequests: <T>(options?: RequestOptions) => api.get<T>('/request/created', options),
+  createRequest: <T>(data: any, options?: RequestOptions) => api.post<T>('/request', data, options),
+  
+  // Auth endpoints
+  login: <T>(data: { email: string; password: string }, options?: RequestOptions) => 
+    api.post<T>('/auth/login', data, options),
+  register: <T>(data: { name: string; email: string; phone: string; role: string }, options?: RequestOptions) => 
+    api.post<T>('/auth/register', data, options),
+  verifyEmail: <T>(data: { email: string; pin: string }, options?: RequestOptions) => 
+    api.post<T>('/auth/verify-email', data, options),
+  setPassword: <T>(data: { email: string; password: string }, options?: RequestOptions) => 
+    api.post<T>('/auth/set-password', data, options),
+  requestPasswordReset: <T>(data: { email: string }, options?: RequestOptions) => 
+    api.post<T>('/auth/request-password-reset', data, options),
+  verifyResetCode: <T>(data: { email: string; resetCode: string }, options?: RequestOptions) => 
+    api.post<T>('/auth/verify-reset-code', data, options),
+  resetPassword: <T>(data: { email: string; resetCode: string; newPassword: string }, options?: RequestOptions) => 
+    api.post<T>('/auth/reset-password', data, options),
 };

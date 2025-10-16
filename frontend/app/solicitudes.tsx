@@ -17,6 +17,7 @@ import { api } from "../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import FloatingCreateButton from "@/components/FloatingCreateButton";
 
 interface Request {
   id: string;
@@ -173,11 +174,33 @@ export default function SolicitudesScreen() {
       end={{ x: 1, y: 1 }}
     >
       <View style={styles.headerContainer}>
-        <Text style={[styles.screenTitle, { color: textColor }]}>Available Requests</Text>
+        <Text style={[styles.screenTitle, { color: textColor }]}>Solicitudes Disponibles</Text>
+        <Pressable
+          style={[styles.createButton, { backgroundColor: buttonBackgroundColor }]}
+          onPress={() => router.push("/create-request-optimized")}
+        >
+          <FontAwesome name="plus" size={16} color={buttonTextColor} />
+          <Text style={[styles.createButtonText, { color: buttonTextColor }]}>
+            Crear Nueva Solicitud ⭐
+          </Text>
+        </Pressable>
       </View>
       {requests.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={{ color: textColor, fontSize: 20 }}>No hay solicitudes disponibles.</Text>
+          <FontAwesome name="music" size={64} color={secondaryTextColor} style={styles.emptyIcon} />
+          <Text style={[styles.emptyTitle, { color: textColor }]}>No hay solicitudes disponibles</Text>
+          <Text style={[styles.emptySubtitle, { color: secondaryTextColor }]}>
+            Sé el primero en crear una solicitud musical
+          </Text>
+          <Pressable
+            style={[styles.createButton, { backgroundColor: buttonBackgroundColor }]}
+            onPress={() => router.push("/create-request-optimized")}
+          >
+            <FontAwesome name="plus" size={16} color={buttonTextColor} />
+            <Text style={[styles.createButtonText, { color: buttonTextColor }]}>
+              Crear Primera Solicitud ⭐
+            </Text>
+          </Pressable>
         </View>
       ) : (
         <FlatList
@@ -187,6 +210,7 @@ export default function SolicitudesScreen() {
           contentContainerStyle={styles.listContentContainer}
         />
       )}
+      <FloatingCreateButton />
       <BottomNavigationBar />
     </LinearGradient>
   );
@@ -204,6 +228,24 @@ const styles = StyleSheet.create({
   screenTitle: {
     fontSize: 28,
     fontWeight: "bold",
+    marginBottom: 15,
+  },
+  createButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  createButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
   },
   listContentContainer: {
     paddingHorizontal: 16,
@@ -278,5 +320,22 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingBottom: 80, // Adjust for bottom nav bar
+    paddingHorizontal: 40,
+  },
+  emptyIcon: {
+    marginBottom: 20,
+    opacity: 0.5,
+  },
+  emptyTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    fontSize: 16,
+    marginBottom: 30,
+    textAlign: "center",
+    lineHeight: 22,
   },
 });
