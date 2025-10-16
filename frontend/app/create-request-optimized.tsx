@@ -422,7 +422,7 @@ export default function CreateRequestOptimizedScreen() {
               <ActivityIndicator size="small" color="white" />
             ) : (
               <>
-                <FontAwesome name="paper-plane" size={18} color="white" />
+                <FontAwesome name="paper-plane" size={18} color="black" />
                 <Text style={styles.submitButtonText}>
                   Crear Solicitud
                 </Text>
@@ -502,7 +502,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   submitButtonText: {
-    color: 'white',
+    color: 'black',
     fontSize: 18,
     fontWeight: 'bold',
     marginLeft: 10,

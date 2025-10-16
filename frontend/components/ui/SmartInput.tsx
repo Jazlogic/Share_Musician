@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useThemeColor } from '../../hooks/use-theme-color';
 import { AppColors } from '../../theme/colors';
@@ -43,12 +43,19 @@ export default function SmartInput({
   const placeholderColor = useThemeColor({ light: AppColors.text.secondary, dark: AppColors.text.secondary }, 'text');
 
   useEffect(() => {
-    if (autoComplete && value.length > 0 && suggestions.length > 0) {
-      const filtered = suggestions.filter(suggestion =>
-        suggestion.toLowerCase().includes(value.toLowerCase())
-      );
-      setFilteredSuggestions(filtered.slice(0, 5)); // Mostrar máximo 5 sugerencias
-      setShowSuggestions(filtered.length > 0);
+    console.log('SmartInput useEffect - value:', value, 'suggestions:', suggestions.length, 'autoComplete:', autoComplete);
+    if (autoComplete && suggestions.length > 0) {
+      if (value.length > 0) {
+        const filtered = suggestions.filter(suggestion =>
+          suggestion.toLowerCase().includes(value.toLowerCase())
+        );
+        setFilteredSuggestions(filtered.slice(0, 5)); // Mostrar máximo 5 sugerencias
+        setShowSuggestions(filtered.length > 0);
+      } else {
+        // Si no hay texto, mostrar las primeras 5 sugerencias
+        setFilteredSuggestions(suggestions.slice(0, 5));
+        setShowSuggestions(true);
+      }
     } else {
       setShowSuggestions(false);
     }
@@ -61,9 +68,20 @@ export default function SmartInput({
   };
 
   const handleFocus = () => {
+    console.log('SmartInput focus - autoComplete:', autoComplete, 'suggestions:', suggestions.length);
     if (autoComplete && suggestions.length > 0) {
-      setFilteredSuggestions(suggestions.slice(0, 5));
-      setShowSuggestions(true);
+      if (value.length > 0) {
+        const filtered = suggestions.filter(suggestion =>
+          suggestion.toLowerCase().includes(value.toLowerCase())
+        );
+        setFilteredSuggestions(filtered.slice(0, 5));
+        setShowSuggestions(filtered.length > 0);
+      } else {
+        // Si está vacío, mostrar las primeras 5 sugerencias
+        setFilteredSuggestions(suggestions.slice(0, 5));
+        setShowSuggestions(true);
+      }
+      console.log('Showing suggestions:', showSuggestions);
     }
   };
 
@@ -92,7 +110,7 @@ export default function SmartInput({
           multiline={multiline}
           keyboardType={keyboardType}
           onFocus={handleFocus}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 300)}
         />
       </View>
 
@@ -102,21 +120,16 @@ export default function SmartInput({
 
       {showSuggestions && filteredSuggestions.length > 0 && (
         <View style={[styles.suggestionsContainer, { backgroundColor, borderColor: tintColor }]}>
-          <FlatList
-            data={filteredSuggestions}
-            keyExtractor={(item, index) => `${item}-${index}`}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[styles.suggestionItem, { borderBottomColor: tintColor }]}
-                onPress={() => handleSuggestionPress(item)}
-              >
-                <FontAwesome name="search" size={14} color={tintColor} style={styles.suggestionIcon} />
-                <Text style={[styles.suggestionText, { color: textColor }]}>{item}</Text>
-              </TouchableOpacity>
-            )}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          />
+          {filteredSuggestions.map((item, index) => (
+            <TouchableOpacity
+              key={`${item}-${index}`}
+              style={[styles.suggestionItem, { borderBottomColor: tintColor }]}
+              onPress={() => handleSuggestionPress(item)}
+            >
+              <FontAwesome name="search" size={14} color={tintColor} style={styles.suggestionIcon} />
+              <Text style={[styles.suggestionText, { color: textColor }]}>{item}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
       )}
     </View>
@@ -156,7 +169,7 @@ const styles = StyleSheet.create({
   },
   suggestionsContainer: {
     position: 'absolute',
-    top: '100%',
+    top: 70, // Altura fija para evitar problemas con '100%'
     left: 0,
     right: 0,
     borderWidth: 2,
