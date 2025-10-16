@@ -63,13 +63,13 @@ const getInstrumentIdsByInstrumentName = async (
   const client = await pool.connect();
   try {
     const result = await client.query(
-      "SELECT instrument_id FROM instruments WHERE name = $1",
+      "SELECT id FROM instruments WHERE name = $1",
       [instrumentName]
     );
     if (result.rows.length === 0) {
       throw new Error(`Instrument with name '${instrumentName}' not found.`);
     }
-    return [result.rows[0].instrument_id]; // Asumiendo un solo instrumento por ahora
+    return [result.rows[0].id]; // Corregido: usar 'id' en lugar de 'instrument_id'
   } finally {
     client.release();
   }
@@ -121,33 +121,51 @@ const calculateRequestPrice = async (
   startTime: string,
   endTime: string
 ): Promise<number> => {
-  const instrumentFactor = await getInstrumentPriceFactor(instrumentName);
-  const eventTypeFactor = await getEventTypePriceFactor(categoryName);
+  try {
+    const instrumentFactor = await getInstrumentPriceFactor(instrumentName);
+    const eventTypeFactor = await getEventTypePriceFactor(categoryName);
 
-  const startDateTime = moment(`${eventDate} ${startTime}`);
-  const endDateTime = moment(`${eventDate} ${endTime}`);
+    const startDateTime = moment(`${eventDate} ${startTime}`);
+    const endDateTime = moment(`${eventDate} ${endTime}`);
 
-  if (!startDateTime.isValid() || !endDateTime.isValid()) {
-    throw new Error("Invalid date or time format for price calculation.");
+    if (!startDateTime.isValid() || !endDateTime.isValid()) {
+      throw new Error("Invalid date or time format for price calculation.");
+    }
+
+    const durationHours = moment
+      .duration(endDateTime.diff(startDateTime))
+      .asHours();
+
+    if (durationHours <= 0) {
+      throw new Error("End time must be after start time.");
+    }
+
+    // Obtener tarifa base de la configuración de precios
+    const client = await pool.connect();
+    try {
+      const configResult = await client.query(
+        "SELECT base_hourly_rate FROM pricing_config WHERE is_active = true LIMIT 1"
+      );
+      const baseRate = configResult.rows.length > 0 
+        ? parseFloat(configResult.rows[0].base_hourly_rate) 
+        : 50.0; // Tarifa base de respaldo
+
+      // Cálculo de precio: tarifaBase * duración * factorInstrumento * factorTipoEvento
+      let totalPrice = baseRate * durationHours * instrumentFactor * eventTypeFactor;
+
+      // Asegurarse de que el precio no sea negativo o cero
+      if (totalPrice <= 0) {
+        totalPrice = baseRate;
+      }
+
+      return parseFloat(totalPrice.toFixed(2));
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("Error calculating request price:", error);
+    throw new Error("Could not calculate request price");
   }
-
-  const durationHours = moment
-    .duration(endDateTime.diff(startDateTime))
-    .asHours();
-
-  // Tarifa base, se puede configurar o obtener de una tabla de configuración
-  const baseRate = 50; // Tarifa base de ejemplo
-
-  // Cálculo de precio simple: tarifaBase * duración * factorInstrumento * factorTipoEvento
-  let totalPrice =
-    baseRate * durationHours * instrumentFactor * eventTypeFactor;
-
-  // Asegurarse de que el precio no sea negativo o cero
-  if (totalPrice <= 0) {
-    totalPrice = baseRate; // Recurrir a la tarifa base si el cálculo produce un resultado no positivo
-  }
-
-  return parseFloat(totalPrice.toFixed(2));
 };
 
 export const createRequest = async (requestData: RequestData) => {
@@ -257,8 +275,14 @@ export const createRequest = async (requestData: RequestData) => {
 
     // Registrar notificación de creación de solicitud
     await client.query(
-      "INSERT INTO notifications (user_id, type, message) VALUES ($1, $2, $3)",
-      [client_id, "request_created", `Has creado una nueva solicitud: ${title}`]
+      "INSERT INTO notifications (user_id, type, title, message, link) VALUES ($1, $2, $3, $4, $5)",
+      [
+        client_id, 
+        'SYSTEM', 
+        'Solicitud Creada', 
+        `Has creado una nueva solicitud: ${title}`, 
+        `/requests/${requestId}`
+      ]
     );
 
     await client.query("COMMIT");
@@ -298,11 +322,23 @@ export const getCreatedRequests = async (userId: string, userRole: string) => {
 };
 
 export const getEventTypes = async (): Promise<
-  { id: string; name: string }[]
+  { id: string; name: string; price_factor?: number }[]
 > => {
   const client = await pool.connect();
   try {
-    const result = await client.query("SELECT id, name FROM event_types");
+    const result = await client.query("SELECT id, name, price_factor FROM event_types ORDER BY name");
+    return result.rows;
+  } finally {
+    client.release();
+  }
+};
+
+export const getInstruments = async (): Promise<
+  { id: string; name: string; category: string; price_factor?: number }[]
+> => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query("SELECT id, name, category, price_factor FROM instruments ORDER BY category, name");
     return result.rows;
   } finally {
     client.release();
@@ -323,12 +359,12 @@ export const getRequestById = async (requestId: string) => {
         r.description,
         et.name as category,
         r.location,
-        r.price,
+        r.total_price,
         r.distance_km,
         r.event_date,
         r.start_time,
         r.end_time,
-        r.price,
+        r.total_price,
         r.status,
         r.created_at,
         r.updated_at,

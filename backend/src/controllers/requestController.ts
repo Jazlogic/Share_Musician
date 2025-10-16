@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createRequest, getCreatedRequests, getEventTypes, getRequestById } from '../services/requestService';
+import { createRequest, getCreatedRequests, getEventTypes, getInstruments, getRequestById } from '../services/requestService';
 
 export const createRequestController = async (req: Request, res: Response) => {
   try {
@@ -12,7 +12,35 @@ export const createRequestController = async (req: Request, res: Response) => {
       return res.status(403).json({ message: 'Forbidden: Only clients and musicians can create requests' });
     }
 
-    const { title, description, category, instrument, event_date, start_time, end_time, location, is_public } = req.body;
+    const { 
+      title, 
+      description, 
+      category, 
+      instrument, 
+      event_date, 
+      start_time, 
+      end_time, 
+      location, 
+      is_public 
+    } = req.body;
+
+    // Validación básica de campos requeridos
+    if (!title || !description || !category || !instrument || !event_date || !start_time || !end_time || !location) {
+      return res.status(400).json({ 
+        message: 'Missing required fields: title, description, category, instrument, event_date, start_time, end_time, location' 
+      });
+    }
+
+    // Validar formato de fecha y hora
+    const eventDate = new Date(event_date);
+    if (isNaN(eventDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid event_date format' });
+    }
+
+    // Validar que la fecha no sea en el pasado
+    if (eventDate < new Date()) {
+      return res.status(400).json({ message: 'Event date cannot be in the past' });
+    }
 
     const newRequest = await createRequest({
       client_id: req.user.userId,
@@ -24,7 +52,7 @@ export const createRequestController = async (req: Request, res: Response) => {
       start_time,
       end_time,
       location,
-      is_public,
+      is_public: is_public !== undefined ? is_public : true,
     });
     res.status(201).json(newRequest);
   } catch (error) {
@@ -57,6 +85,16 @@ export const getEventTypesController = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Error in getEventTypesController:', error);
     res.status(500).json({ message: 'Error fetching event types' });
+  }
+};
+
+export const getInstrumentsController = async (req: Request, res: Response) => {
+  try {
+    const instruments = await getInstruments();
+    res.status(200).json(instruments);
+  } catch (error: any) {
+    console.error('Error in getInstrumentsController:', error);
+    res.status(500).json({ message: 'Error fetching instruments' });
   }
 };
 
