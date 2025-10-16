@@ -73,6 +73,8 @@ export default function RequestDetailsScreen() {
       // Función asíncrona para obtener los detalles de la solicitud desde la API.
       const fetchRequestDetails = async () => {
         try {
+          let a = 1;
+          console.log(a);
           // Realiza una llamada a la API para obtener la solicitud por su ID.
           const response = await api.getRequestById<Request>(`${id}`);
           console.log('Request Details:',response.data);
