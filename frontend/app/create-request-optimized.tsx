@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Platform, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeColor } from '../hooks/use-theme-color';
 import { FontAwesome } from '@expo/vector-icons';
 import BottomNavigationBar from '../components/BottomNavigationBar';
 import { api, ApiResponse, MessageResponse } from '../services/api';
 import { useUser } from '../context/UserContext';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppColors } from '../theme/colors';
 
@@ -85,6 +85,12 @@ const descriptionSuggestions = [
 
 export default function CreateRequestOptimizedScreen() {
   const { user } = useUser();
+  const { width, height } = Dimensions.get('window');
+  const isTablet = width >= 768;
+  const isWeb = Platform.OS === 'web';
+  
+  // Estado para manejar los pasos
+  const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
@@ -305,91 +311,203 @@ export default function CreateRequestOptimizedScreen() {
   const estimatedPrice = calculateEstimatedPrice();
 
   return (
-    <LinearGradient colors={[gradientStart, gradientEnd]} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: textColor }]}>
-            Crear Solicitud Musical
-          </Text>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <LinearGradient colors={[gradientStart, gradientEnd]} style={styles.container}>
+        <ScrollView contentContainerStyle={[
+          styles.scrollContainer, 
+          isTablet && styles.scrollContainerTablet,
+          isWeb && styles.scrollContainerWeb
+        ]}>
+        <View style={[
+          styles.header, 
+          isTablet && styles.headerTablet,
+          isWeb && styles.headerWeb
+        ]}>
+          <View style={styles.headerTop}>
+            <TouchableOpacity 
+              style={[styles.backButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}
+              onPress={() => router.back()}
+            >
+              <FontAwesome name="arrow-left" size={20} color={textColor} />
+            </TouchableOpacity>
+            <Text style={[
+              styles.headerTitle, 
+              { color: textColor }, 
+              isTablet && styles.headerTitleTablet,
+              isWeb && styles.headerTitleWeb
+            ]}>
+              Crear Solicitud Musical
+            </Text>
+            <View style={{ width: 40 }} />
+          </View>
           <Text style={[styles.headerSubtitle, { color: textColor, opacity: 0.7 }]}>
             Completa los campos para crear tu solicitud
           </Text>
         </View>
 
-        <View style={styles.formContainer}>
-          {/* Título con sugerencias */}
-          <SmartInput
-            label="Título del Evento"
-            value={formData.title}
-            onChangeText={(text) => setFormData({ ...formData, title: text })}
-            placeholder="Ej: Concierto Benéfico"
-            icon="pencil"
-            suggestions={titleSuggestions}
-            required
-            error={errors.title}
-          />
+        <View style={[
+          styles.formContainer, 
+          isTablet && styles.formContainerTablet,
+          isWeb && styles.formContainerWeb
+        ]}>
+          {isWeb ? (
+            <View style={styles.webRow}>
+              <View style={styles.webColumn}>
+                {/* Título con sugerencias */}
+                <SmartInput
+                  label="Título del Evento"
+                  value={formData.title}
+                  onChangeText={(text) => setFormData({ ...formData, title: text })}
+                  placeholder="Ej: Concierto Benéfico"
+                  icon="pencil"
+                  suggestions={titleSuggestions}
+                  required
+                  error={errors.title}
+                />
 
-          {/* Descripción con sugerencias */}
-          <SmartInput
-            label="Descripción del Evento"
-            value={formData.description}
-            onChangeText={(text) => setFormData({ ...formData, description: text })}
-            placeholder="Describe tu evento y qué tipo de música necesitas..."
-            icon="align-left"
-            suggestions={descriptionSuggestions}
-            multiline
-            required
-            error={errors.description}
-          />
+                {/* Selector de categoría con precios */}
+                <CategorySelector
+                  label="Tipo de Evento"
+                  selectedCategory={formData.category}
+                  onCategorySelect={(category) => setFormData({ ...formData, category })}
+                  categories={eventTypes}
+                  required
+                  error={errors.category}
+                  showPriceEstimate={true}
+                  durationHours={formData.startTime && formData.endTime ? 
+                    (formData.endTime.getTime() - formData.startTime.getTime()) / (1000 * 60 * 60) : 1
+                  }
+                />
 
-          {/* Selector de categoría con precios */}
-          <CategorySelector
-            label="Tipo de Evento"
-            selectedCategory={formData.category}
-            onCategorySelect={(category) => setFormData({ ...formData, category })}
-            categories={eventTypes}
-            required
-            error={errors.category}
-            showPriceEstimate={true}
-            durationHours={formData.startTime && formData.endTime ? 
-              (formData.endTime.getTime() - formData.startTime.getTime()) / (1000 * 60 * 60) : 1
-            }
-          />
+                {/* Selector de instrumentos */}
+                <InstrumentSelector
+                  label="Instrumentos Requeridos"
+                  selectedInstruments={formData.instruments}
+                  onInstrumentsChange={(instruments) => setFormData({ ...formData, instruments })}
+                  instruments={instruments}
+                  required
+                  error={errors.instruments}
+                  maxSelections={3}
+                  showPriceFactor={true}
+                />
+              </View>
 
-          {/* Selector de instrumentos */}
-          <InstrumentSelector
-            label="Instrumentos Requeridos"
-            selectedInstruments={formData.instruments}
-            onInstrumentsChange={(instruments) => setFormData({ ...formData, instruments })}
-            instruments={instruments}
-            required
-            error={errors.instruments}
-            maxSelections={3}
-            showPriceFactor={true}
-          />
+              <View style={styles.webColumn}>
+                {/* Descripción con sugerencias */}
+                <SmartInput
+                  label="Descripción del Evento"
+                  value={formData.description}
+                  onChangeText={(text) => setFormData({ ...formData, description: text })}
+                  placeholder="Describe tu evento y qué tipo de música necesitas..."
+                  icon="align-left"
+                  suggestions={descriptionSuggestions}
+                  multiline
+                  required
+                  error={errors.description}
+                />
 
-          {/* Selector de ubicación */}
-          <LocationSelector
-            label="Ubicación del Evento"
-            location={formData.location}
-            onLocationChange={(location) => setFormData({ ...formData, location })}
-            required
-            error={errors.location}
-          />
+                {/* Selector de ubicación */}
+                <LocationSelector
+                  label="Ubicación del Evento"
+                  location={formData.location}
+                  onLocationChange={(location) => setFormData({ ...formData, location })}
+                  required
+                  error={errors.location}
+                />
 
-          {/* Selector de fecha y hora */}
-          <DateTimeSelector
-            label="Fecha y Hora del Evento"
-            selectedDate={formData.eventDate}
-            startTime={formData.startTime}
-            endTime={formData.endTime}
-            onDateChange={(date) => setFormData({ ...formData, eventDate: date })}
-            onStartTimeChange={(time) => setFormData({ ...formData, startTime: time })}
-            onEndTimeChange={(time) => setFormData({ ...formData, endTime: time })}
-            required
-            error={errors.eventDate || errors.startTime || errors.endTime}
-            showDuration={true}
-          />
+                {/* Selector de fecha y hora */}
+                <DateTimeSelector
+                  label="Fecha y Hora del Evento"
+                  selectedDate={formData.eventDate}
+                  startTime={formData.startTime}
+                  endTime={formData.endTime}
+                  onDateChange={(date) => setFormData({ ...formData, eventDate: date })}
+                  onStartTimeChange={(time) => setFormData({ ...formData, startTime: time })}
+                  onEndTimeChange={(time) => setFormData({ ...formData, endTime: time })}
+                  required
+                  error={errors.eventDate || errors.startTime || errors.endTime}
+                  showDuration={true}
+                />
+              </View>
+            </View>
+          ) : (
+            <>
+              {/* Título con sugerencias */}
+              <SmartInput
+                label="Título del Evento"
+                value={formData.title}
+                onChangeText={(text) => setFormData({ ...formData, title: text })}
+                placeholder="Ej: Concierto Benéfico"
+                icon="pencil"
+                suggestions={titleSuggestions}
+                required
+                error={errors.title}
+              />
+
+              {/* Descripción con sugerencias */}
+              <SmartInput
+                label="Descripción del Evento"
+                value={formData.description}
+                onChangeText={(text) => setFormData({ ...formData, description: text })}
+                placeholder="Describe tu evento y qué tipo de música necesitas..."
+                icon="align-left"
+                suggestions={descriptionSuggestions}
+                multiline
+                required
+                error={errors.description}
+              />
+
+              {/* Selector de categoría con precios */}
+              <CategorySelector
+                label="Tipo de Evento"
+                selectedCategory={formData.category}
+                onCategorySelect={(category) => setFormData({ ...formData, category })}
+                categories={eventTypes}
+                required
+                error={errors.category}
+                showPriceEstimate={true}
+                durationHours={formData.startTime && formData.endTime ? 
+                  (formData.endTime.getTime() - formData.startTime.getTime()) / (1000 * 60 * 60) : 1
+                }
+              />
+
+              {/* Selector de instrumentos */}
+              <InstrumentSelector
+                label="Instrumentos Requeridos"
+                selectedInstruments={formData.instruments}
+                onInstrumentsChange={(instruments) => setFormData({ ...formData, instruments })}
+                instruments={instruments}
+                required
+                error={errors.instruments}
+                maxSelections={3}
+                showPriceFactor={true}
+              />
+
+              {/* Selector de ubicación */}
+              <LocationSelector
+                label="Ubicación del Evento"
+                location={formData.location}
+                onLocationChange={(location) => setFormData({ ...formData, location })}
+                required
+                error={errors.location}
+              />
+
+              {/* Selector de fecha y hora */}
+              <DateTimeSelector
+                label="Fecha y Hora del Evento"
+                selectedDate={formData.eventDate}
+                startTime={formData.startTime}
+                endTime={formData.endTime}
+                onDateChange={(date) => setFormData({ ...formData, eventDate: date })}
+                onStartTimeChange={(time) => setFormData({ ...formData, startTime: time })}
+                onEndTimeChange={(time) => setFormData({ ...formData, endTime: time })}
+                required
+                error={errors.eventDate || errors.startTime || errors.endTime}
+                showDuration={true}
+              />
+            </>
+          )}
 
           {/* Estimación de precio */}
           {estimatedPrice > 0 && (
@@ -433,6 +551,7 @@ export default function CreateRequestOptimizedScreen() {
       </ScrollView>
       <BottomNavigationBar />
     </LinearGradient>
+    </>
   );
 }
 
@@ -506,5 +625,60 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginLeft: 10,
+  },
+  // Estilos responsive
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  scrollContainerTablet: {
+    maxWidth: 800,
+    alignSelf: 'center',
+  },
+  scrollContainerWeb: {
+    maxWidth: 1200,
+    alignSelf: 'center',
+    paddingHorizontal: 60,
+  },
+  headerTablet: {
+    marginBottom: 40,
+  },
+  headerWeb: {
+    marginBottom: 50,
+  },
+  headerTitleTablet: {
+    fontSize: 32,
+  },
+  headerTitleWeb: {
+    fontSize: 36,
+  },
+  formContainerTablet: {
+    padding: 30,
+  },
+  formContainerWeb: {
+    padding: 40,
+    maxWidth: 1000,
+  },
+  webColumn: {
+    flex: 1,
+    paddingHorizontal: 10,
+  },
+  webRow: {
+    flexDirection: 'row',
+    gap: 20,
   },
 });

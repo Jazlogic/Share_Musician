@@ -41,9 +41,10 @@ export default function SmartInput({
   const backgroundColor = useThemeColor({ light: AppColors.background.light, dark: AppColors.background.dark }, 'background');
   const errorColor = useThemeColor({ light: AppColors.secondary.red, dark: AppColors.secondary.red }, 'text');
   const placeholderColor = useThemeColor({ light: AppColors.text.secondary, dark: AppColors.text.secondary }, 'text');
+  const inputBackgroundColor = useThemeColor({ light: 'rgba(255, 255, 255, 0.1)', dark: 'rgba(0, 0, 0, 0.2)' }, 'background');
+  const shadowColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
 
   useEffect(() => {
-    console.log('SmartInput useEffect - value:', value, 'suggestions:', suggestions.length, 'autoComplete:', autoComplete);
     if (autoComplete && suggestions.length > 0) {
       if (value.length > 0) {
         const filtered = suggestions.filter(suggestion =>
@@ -68,7 +69,6 @@ export default function SmartInput({
   };
 
   const handleFocus = () => {
-    console.log('SmartInput focus - autoComplete:', autoComplete, 'suggestions:', suggestions.length);
     if (autoComplete && suggestions.length > 0) {
       if (value.length > 0) {
         const filtered = suggestions.filter(suggestion =>
@@ -81,7 +81,6 @@ export default function SmartInput({
         setFilteredSuggestions(suggestions.slice(0, 5));
         setShowSuggestions(true);
       }
-      console.log('Showing suggestions:', showSuggestions);
     }
   };
 
@@ -92,7 +91,7 @@ export default function SmartInput({
         {required && <Text style={{ color: errorColor }}> *</Text>}
       </Text>
       
-      <View style={[styles.inputContainer, { borderColor: error ? errorColor : tintColor }]}>
+      <View style={[styles.inputContainer, { borderColor: error ? errorColor : tintColor, backgroundColor: inputBackgroundColor }]}>
         <FontAwesome name={icon} size={20} color={tintColor} style={styles.icon} />
         <TextInput
           style={[
@@ -119,7 +118,7 @@ export default function SmartInput({
       )}
 
       {showSuggestions && filteredSuggestions.length > 0 && (
-        <View style={[styles.suggestionsContainer, { backgroundColor, borderColor: tintColor }]}>
+        <View style={[styles.suggestionsContainer, { backgroundColor, borderColor: tintColor, shadowColor }]}>
           {filteredSuggestions.map((item, index) => (
             <TouchableOpacity
               key={`${item}-${index}`}
@@ -152,7 +151,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderRadius: 12,
     paddingHorizontal: 15,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   icon: {
     marginRight: 12,
@@ -179,7 +177,6 @@ const styles = StyleSheet.create({
     maxHeight: 200,
     zIndex: 1000,
     elevation: 5,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
