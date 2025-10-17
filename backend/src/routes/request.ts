@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createRequestController, getCreatedRequestsController, getEventTypesController, getInstrumentsController, getRequestByIdController } from '../controllers/requestController';
+import { createRequestController, getCreatedRequestsController, getEventTypesController, getInstrumentsController, getRequestByIdController, updateRequestStatusController, getAllRequestsController } from '../controllers/requestController';
 import { authenticateToken } from '../middleware/authMiddleware';
 
 const router = Router();
@@ -480,5 +480,63 @@ router.get('/instruments', getInstrumentsController);
  *         description: Some server error
  */
 router.get('/:id', authenticateToken, getRequestByIdController);
+
+/**
+ * @swagger
+ * /request/{id}/status:
+ *   put:
+ *     summary: Update the status of a music request
+ *     tags: [Request]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The request ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [CREATED, OFFER_RECEIVED, OFFER_ACCEPTED, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED_BY_CLIENT, CANCELLED_BY_MUSICIAN, REOPENED, EXPIRED, ARCHIVED]
+ *                 description: New status for the request
+ *               cancellation_reason:
+ *                 type: string
+ *                 description: Reason for cancellation (optional, required for cancellation statuses)
+ *     responses:
+ *       200:
+ *         description: Request status updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Request status updated successfully
+ *                 request:
+ *                   type: object
+ *       400:
+ *         description: Invalid status or status transition
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Request not found
+ *       500:
+ *         description: Server error
+ */
+router.put('/:id/status', authenticateToken, updateRequestStatusController);
+
+// Ruta temporal para debug - listar todas las solicitudes
+router.get('/debug/all', authenticateToken, getAllRequestsController);
 
 export default router;

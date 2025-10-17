@@ -1,29 +1,24 @@
-import { Link } from 'expo-router';
-import { StyleSheet } from 'react-native';
-
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { useLocalSearchParams, router } from 'expo-router';
+import { useEffect } from 'react';
 
 export default function ModalScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title">This is a modal</ThemedText>
-      <Link href="/" dismissTo style={styles.link}>
-        <ThemedText type="link">Go to home screen</ThemedText>
-      </Link>
-    </ThemedView>
-  );
-}
+  const params = useLocalSearchParams();
+  const requestId = params.requestId as string;
+  const flow = params.flow as string;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
-  },
-});
+  useEffect(() => {
+    if (flow === 'makeOffer' && requestId) {
+      // Redirigir a la pantalla de hacer oferta
+      router.replace({
+        pathname: '/make-offer',
+        params: { requestId, flow }
+      });
+    } else {
+      // Redirigir a la pantalla principal si no hay parámetros válidos
+      router.replace('/');
+    }
+  }, [flow, requestId]);
+
+  // Este componente no renderiza nada ya que redirige inmediatamente
+  return null;
+}

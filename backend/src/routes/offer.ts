@@ -1,5 +1,12 @@
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware';
+import { 
+  createOfferController, 
+  getOfferByIdController, 
+  acceptOfferController, 
+  rejectOfferController, 
+  getOffersByRequestController 
+} from '../controllers/offerController';
 
 const router = Router();
 
@@ -315,12 +322,12 @@ const router = Router();
  *         description: Error interno del servidor
  */
 
-// TODO: Implementar controladores para ofertas
-// router.post('/', authenticateToken, createOfferController);
-// router.get('/:id', authenticateToken, getOfferByIdController);
-// router.post('/:id/accept', authenticateToken, acceptOfferController);
-// router.post('/:id/reject', authenticateToken, rejectOfferController);
-// router.get('/request/:requestId', authenticateToken, getOffersByRequestController);
+// Rutas de ofertas
+router.post('/', authenticateToken, createOfferController);
+router.get('/:id', authenticateToken, getOfferByIdController);
+router.post('/:id/accept', authenticateToken, acceptOfferController);
+router.post('/:id/reject', authenticateToken, rejectOfferController);
+router.get('/request/:requestId', authenticateToken, getOffersByRequestController);
 
 export default router;
 

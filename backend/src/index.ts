@@ -10,6 +10,7 @@ import userRoutes from './routes/user'; // Import the new user routes
 import storageRoutes from './routes/storage';
 import postRoutes from './routes/post'; // Import the new post routes
 import requestRoutes from './routes/request';
+import offerRoutes from './routes/offer';
 import eventTypeRoutes from './routes/event_type';
 import instrumentRoutes from './routes/instrument';
 import requestStatusRoutes from './routes/request_status';
@@ -153,6 +154,7 @@ app.use('/users', userRoutes);
 app.use('/storage', storageRoutes);
 app.use('/posts', postRoutes); // Use the new post routes
 app.use('/request', requestRoutes);
+app.use('/offer', offerRoutes);
 app.use('/event-types', eventTypeRoutes);
 app.use('/instruments', instrumentRoutes);
 app.use('/request-statuses', requestStatusRoutes);

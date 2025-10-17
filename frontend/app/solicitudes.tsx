@@ -18,6 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import FloatingCreateButton from "@/components/FloatingCreateButton";
+import StatusBadge from "../components/ui/StatusBadge";
 
 interface Request {
   id: string;
@@ -205,9 +206,7 @@ export default function SolicitudesScreen() {
             <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={2}>
               {item.title || 'Sin título'}
             </Text>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status || 'CREATED') }]}>
-              <Text style={styles.statusText}>{getStatusText(item.status || 'CREATED')}</Text>
-            </View>
+            <StatusBadge status={item.status || 'CREATED'} size="small" />
           </View>
           <Text style={[styles.cardPrice, { color: textColor }]}>
             RD$ {(item.total_price || item.price || 0).toLocaleString()}

@@ -389,3 +389,105 @@ export const getRequestById = async (requestId: string) => {
     client.release();
   }
 };
+
+// Función para actualizar el estado de una solicitud
+export const updateRequestStatus = async (
+  requestId: string,
+  newStatus: string,
+  userId: string,
+  userRole: string,
+  cancellationReason?: string
+): Promise<any> => {
+  const client = await pool.connect();
+  try {
+    // Validar que la solicitud existe
+    const requestCheck = await client.query(
+      "SELECT id, status, client_id, musician_id FROM request WHERE id = $1",
+      [requestId]
+    );
+
+    if (requestCheck.rows.length === 0) {
+      throw new Error("Request not found");
+    }
+
+    const request = requestCheck.rows[0];
+
+    // Validar transiciones de estado según el rol del usuario
+    const validTransitions = getValidTransitions(request.status, userRole, request.client_id, request.musician_id, userId);
+    
+    if (!validTransitions.includes(newStatus)) {
+      throw new Error(`Invalid status transition from ${request.status} to ${newStatus} for role ${userRole}`);
+    }
+
+    // Actualizar el estado de la solicitud
+    const updateQuery = `
+      UPDATE request 
+      SET status = $1, updated_at = CURRENT_TIMESTAMP
+      ${cancellationReason ? ', cancellation_reason = $3' : ''}
+      WHERE id = $2
+      RETURNING *
+    `;
+
+    const params = cancellationReason ? [newStatus, requestId, cancellationReason] : [newStatus, requestId];
+    const result = await client.query(updateQuery, params);
+
+    // Si se cancela, actualizar el campo cancelled_by
+    if (newStatus.includes('CANCELLED')) {
+      await client.query(
+        "UPDATE request SET cancelled_by = $1 WHERE id = $2",
+        [userId, requestId]
+      );
+    }
+
+    return result.rows[0];
+  } catch (error) {
+    console.error("Error updating request status:", error);
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+// Función auxiliar para determinar transiciones válidas
+const getValidTransitions = (
+  currentStatus: string,
+  userRole: string,
+  requestClientId: string,
+  requestMusicianId: string,
+  userId: string
+): string[] => {
+  const isClient = userRole === 'client' && requestClientId === userId;
+  const isMusician = userRole === 'musician' && requestMusicianId === userId;
+  const isAdmin = userRole === 'admin';
+
+  const transitions: { [key: string]: string[] } = {
+    'CREATED': ['OFFER_RECEIVED', 'CANCELLED_BY_CLIENT', 'EXPIRED'],
+    'OFFER_RECEIVED': ['OFFER_ACCEPTED', 'CANCELLED_BY_CLIENT', 'EXPIRED'],
+    'OFFER_ACCEPTED': ['CONFIRMED', 'CANCELLED_BY_CLIENT', 'CANCELLED_BY_MUSICIAN'],
+    'CONFIRMED': ['IN_PROGRESS', 'CANCELLED_BY_CLIENT', 'CANCELLED_BY_MUSICIAN'],
+    'IN_PROGRESS': ['COMPLETED', 'CANCELLED_BY_CLIENT', 'CANCELLED_BY_MUSICIAN'],
+    'COMPLETED': ['REOPENED', 'ARCHIVED'],
+    'CANCELLED_BY_CLIENT': ['REOPENED'],
+    'CANCELLED_BY_MUSICIAN': ['REOPENED'],
+    'REOPENED': ['CREATED', 'OFFER_RECEIVED'],
+    'EXPIRED': ['REOPENED'],
+    'ARCHIVED': []
+  };
+
+  let validStatuses = transitions[currentStatus] || [];
+
+  // Filtrar según permisos del usuario
+  if (isClient) {
+    validStatuses = validStatuses.filter(status => 
+      ['CONFIRMED', 'COMPLETED', 'CANCELLED_BY_CLIENT', 'REOPENED'].includes(status)
+    );
+  } else if (isMusician) {
+    validStatuses = validStatuses.filter(status => 
+      ['CONFIRMED', 'COMPLETED', 'CANCELLED_BY_MUSICIAN'].includes(status)
+    );
+  } else if (!isAdmin) {
+    validStatuses = [];
+  }
+
+  return validStatuses;
+};

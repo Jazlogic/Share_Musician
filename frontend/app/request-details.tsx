@@ -23,6 +23,10 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { ScrollView } from "react-native-gesture-handler";
 import BottomNavigationBar from "../components/BottomNavigationBar";
 import { useRouter } from "expo-router";
+import StatusBadge from "../components/ui/StatusBadge";
+import StatusActionButton from "../components/ui/StatusActionButton";
+import { useUser } from "../context/UserContext";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Request {
   id: string;
@@ -52,6 +56,7 @@ export default function RequestDetailsScreen() {
   // Obtiene el parámetro `id` de la URL local, que representa el ID de la solicitud.
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const { user } = useUser();
   // Estado para almacenar los detalles de la solicitud, inicializado como nulo.
   const [request, setRequest] = useState<Request | null>(null);
   // Estado para controlar el indicador de carga, inicializado en `true`.
@@ -99,7 +104,35 @@ export default function RequestDetailsScreen() {
       // Ejecuta la función para obtener los detalles de la solicitud.
       fetchRequestDetails();
     }
-  }, [id]); // El efecto se ejecuta cada vez que `id` cambia.
+  }, [id]);
+
+  // Función para actualizar el estado de la solicitud
+  const handleStatusUpdate = async (newStatus: string, cancellationReason?: string) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await api.updateRequestStatus<{ message: string; request: Request }>(
+        id as string,
+        { status: newStatus, cancellation_reason: cancellationReason },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (response.data.request) {
+        setRequest(response.data.request);
+      }
+    } catch (error) {
+      console.error('Error updating request status:', error);
+      throw error;
+    }
+  }; // El efecto se ejecuta cada vez que `id` cambia.
 
   // Muestra un indicador de carga mientras se obtienen los datos.
   if (loading) {
@@ -177,8 +210,12 @@ export default function RequestDetailsScreen() {
           >
           {/* Sección para el título de la solicitud. */}
           <View style={[styles.section]}>
-          <Text style={[styles.sectionTitle, { color }]}>{request.title}</Text>
-        </View>
+            <Text style={[styles.sectionTitle, { color }]}>{request.title}</Text>
+            {/* Badge de estado */}
+            <View style={styles.statusContainer}>
+              <StatusBadge status={request.status} size="large" />
+            </View>
+          </View>
           {/* Título para la tarifa. */}
           <Text style={[styles.balanceTitle, { color, marginTop: 10}]}>Tarifa</Text>
           {/* Precio de la solicitud. */}
@@ -250,6 +287,19 @@ export default function RequestDetailsScreen() {
                <Ionicons name="create" size={24} color={AppColors.text.white} />
               <Text style={[styles.itemsText, { color: itemTextColor }]}>Fecha de creación ► {new Date(request.created_at).toLocaleDateString()}</Text>
             </View>
+
+            {/* Botones de acción para cambiar estado */}
+            {user && (
+              <View style={styles.actionsContainer}>
+                <StatusActionButton
+                  currentStatus={request.status}
+                  userRole={user.role}
+                  isClient={(user.role === 'client' || user.role === 'leader') && user.user_id === request.client_id}
+                  isMusician={user.role === 'musician' && user.user_id === request.musician_id}
+                  onStatusChange={handleStatusUpdate}
+                />
+              </View>
+            )}
 
       </ScrollView>
      {/* Barra de navegación inferior. */}
@@ -408,5 +458,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  statusContainer: {
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  actionsContainer: {
+    marginTop: 20,
+    paddingHorizontal: 10,
   },
 });

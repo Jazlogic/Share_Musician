@@ -9,7 +9,7 @@ interface User {
   name: string;
   email: string;
   phone: string;
-  role: 'leader' | 'musician' | 'admin';
+  role: 'client' | 'leader' | 'musician' | 'admin';
   active_role: 'leader' | 'musician';
   status: 'active' | 'pending' | 'rejected';
   church_id: string | null;
@@ -59,15 +59,37 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         throw new Error('No authentication token found.');
       }
 
+      console.log('Fetching user data for ID:', userId);
       const response = await api.get<{ user: User}>(`/users/${userId}`, {
         headers: {
           Authorization: `Bearer ${userToken}`,
         },
       });
+      console.log('User data fetched successfully:', response.data);
       setUser(response.data.user || response.data);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch user data.');
-      setUser(null);
+      console.error('Error fetching user data:', err);
+      console.error('Error details:', {
+        message: err.message,
+        status: err.status,
+        userId: userId
+      });
+      
+      // Si el usuario no existe (404), limpiar el token y redirigir al login
+      if (err.message?.includes('404') || err.message?.includes('not found') || err.message?.includes('Usuario no encontrado')) {
+        console.log('User not found, clearing authentication...');
+        await AsyncStorage.removeItem('userToken');
+        setUser(null);
+        setError('Usuario no encontrado. Por favor, inicia sesión nuevamente.');
+      } else if (err.message?.includes('403') || err.message?.includes('No autorizado')) {
+        console.log('Token invalid or expired, clearing authentication...');
+        await AsyncStorage.removeItem('userToken');
+        setUser(null);
+        setError('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      } else {
+        setError(err.message || 'Error al cargar datos del usuario.');
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }

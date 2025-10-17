@@ -109,6 +109,17 @@ export const api = {
   getInstruments: <T>(options?: RequestOptions) => api.get<T>('/request/instruments', options),
   getCreatedRequests: <T>(options?: RequestOptions) => api.get<T>('/request/created', options),
   createRequest: <T>(data: any, options?: RequestOptions) => api.post<T>('/request', data, options),
+  updateRequestStatus: <T>(id: string, data: { status: string; cancellation_reason?: string }, options?: RequestOptions) => 
+    api.put<T>(`/request/${id}/status`, data, options),
+  
+  // Offer endpoints
+  createOffer: <T>(data: { request_id: string; price: number; message: string }, options?: RequestOptions) => 
+    api.post<T>('/offer', data, options),
+  getOfferById: <T>(id: string, options?: RequestOptions) => api.get<T>(`/offer/${id}`, options),
+  acceptOffer: <T>(id: string, options?: RequestOptions) => api.post<T>(`/offer/${id}/accept`, {}, options),
+  rejectOffer: <T>(id: string, options?: RequestOptions) => api.post<T>(`/offer/${id}/reject`, {}, options),
+  getOffersByRequest: <T>(requestId: string, options?: RequestOptions) => 
+    api.get<T>(`/offer/request/${requestId}`, options),
   
   // Auth endpoints
   login: <T>(data: { email: string; password: string }, options?: RequestOptions) => 

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { createRequest, getCreatedRequests, getEventTypes, getInstruments, getRequestById } from '../services/requestService';
+import { createRequest, getCreatedRequests, getEventTypes, getInstruments, getRequestById, updateRequestStatus } from '../services/requestService';
+import pool from '../config/db';
 
 export const createRequestController = async (req: Request, res: Response) => {
   try {
@@ -109,5 +110,79 @@ export const getRequestByIdController = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error in getRequestByIdController:', error);
     res.status(500).json({ message: 'Error fetching request' });
+  }
+};
+
+export const getAllRequestsController = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Unauthorized: User information not found' });
+    }
+
+    const requests = await pool.query(`
+      SELECT id, title, status, client_id, created_at 
+      FROM request 
+      ORDER BY created_at DESC 
+      LIMIT 10
+    `);
+
+    res.json({
+      message: 'Requests retrieved successfully',
+      requests: requests.rows
+    });
+  } catch (error) {
+    console.error('Error in getAllRequestsController:', error);
+    res.status(500).json({ message: 'Error fetching requests' });
+  }
+};
+
+export const updateRequestStatusController = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Unauthorized: User information not found' });
+    }
+
+    const { id } = req.params;
+    const { status, cancellation_reason } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ message: 'Status is required' });
+    }
+
+    // Validar que el estado sea válido
+    const validStatuses = [
+      'CREATED', 'OFFER_RECEIVED', 'OFFER_ACCEPTED', 'CONFIRMED',
+      'IN_PROGRESS', 'COMPLETED', 'CANCELLED_BY_CLIENT', 'CANCELLED_BY_MUSICIAN',
+      'REOPENED', 'EXPIRED', 'ARCHIVED'
+    ];
+
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    const updatedRequest = await updateRequestStatus(
+      id,
+      status,
+      req.user.userId,
+      req.user.role,
+      cancellation_reason
+    );
+
+    res.json({
+      message: 'Request status updated successfully',
+      request: updatedRequest
+    });
+  } catch (error: any) {
+    console.error('Error in updateRequestStatusController:', error);
+    
+    if (error.message === 'Request not found') {
+      return res.status(404).json({ message: 'Request not found' });
+    }
+    
+    if (error.message.includes('Invalid status transition')) {
+      return res.status(400).json({ message: error.message });
+    }
+    
+    res.status(500).json({ message: 'Error updating request status' });
   }
 };

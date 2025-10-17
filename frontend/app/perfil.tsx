@@ -17,7 +17,7 @@ interface UserProfile {
   name: string;
   email: string;
   phone: string;
-  role: 'leader' | 'musician' | 'admin';
+  role: 'client' | 'leader' | 'musician' | 'admin';
   active_role: 'leader' | 'musician';
   status: 'active' | 'pending' | 'rejected';
   church_id: string | null;

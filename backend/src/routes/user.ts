@@ -15,6 +15,7 @@ import {
   serveProfileImage,
 } from '../controllers/userController';
 import { authenticateToken } from '../middleware/authMiddleware';
+import { getUserById } from '../services/userService';
 import multer from 'multer';
 
 // Configuración de Multer para manejar la subida de archivos en memoria
@@ -107,6 +108,74 @@ router.get('/', authenticateToken, getUsersController);
  *         description: The user was not found
  */
 router.get('/:id', authenticateToken, getUserByIdController);
+
+/**
+ * @swagger
+ * /users/debug/all:
+ *   get:
+ *     summary: Get all users (debug endpoint)
+ *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
+ */
+router.get('/debug/all', authenticateToken, getUsersController);
+
+/**
+ * @swagger
+ * /users/verify-token:
+ *   get:
+ *     summary: Verify if the current token is valid
+ *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Token is valid
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 valid:
+ *                   type: boolean
+ *                   example: true
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Token is invalid or expired
+ *       404:
+ *         description: User not found
+ */
+router.get('/verify-token', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'No user ID in token' });
+    }
+
+    const user = await getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found', valid: false });
+    }
+
+    res.status(200).json({ 
+      valid: true, 
+      user: user,
+      message: 'Token is valid' 
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message, valid: false });
+  }
+});
 
 /**
  * @swagger
